@@ -37,6 +37,15 @@ jobs:
           TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
         run: python skills/free-music-generator/scripts/credits.py
 
+      - name: Print generate.py source (to inspect download URL logic)
+        working-directory: tunee-skill
+        run: cat skills/free-music-generator/scripts/generate.py
+
+      - name: Print any helper/client source files
+        working-directory: tunee-skill
+        run: |
+          find skills/free-music-generator -name "*.py" | xargs -I{} sh -c 'echo "=== {} ==="; cat {}'
+
       - name: Generate ONE test track (prints raw output)
         working-directory: tunee-skill
         env:
