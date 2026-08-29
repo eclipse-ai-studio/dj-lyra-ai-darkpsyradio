@@ -48,7 +48,7 @@ TRACKS_DIR = Path("output/tracks")
 MIX_PATH = Path("output/weekly_mix.mp3")
 STATUS_PATH = Path("output/pipeline_status.json")
 
-GENERATE_SCRIPT = Path("tunee-skill/skills/free-music-generator/scripts/generate.py")
+GENERATE_SCRIPT = Path("skills/free-music-generator/scripts/generate.py")
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
