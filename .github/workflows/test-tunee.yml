@@ -1,7 +1,7 @@
 name: Test Tunee Generation
 
 on:
-  workflow_dispatch:  # manual trigger only, from the Actions tab
+  workflow_dispatch:
 
 jobs:
   test-generate:
@@ -31,36 +31,43 @@ jobs:
           TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
         run: |
           python skills/free-music-generator/scripts/generate.py \
-            --title "DJ Lyra Ai - Test Fragment 2" \
+            --title "DJ Lyra Ai - Test Fragment 3" \
             --prompt "darkpsy, underground darkpsy label style, instrumental, 148 bpm, rolling bassline, fast driving kick, squelchy FM synth leads, organic atmospheric textures, psychedelic soundscapes, mysterious alien sound effects, hypnotic, nocturnal, aggressive, fast-paced" \
             --model mureka_v9 > ../gen_result.json
           echo "--- generate.py output ---"
           cat ../gen_result.json
 
-      - name: Poll music/query endpoint and print raw response
-        working-directory: tunee-skill
-        env:
-          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+      - name: Wait for generation to likely finish
+        run: sleep 90
+
+      - name: Fetch share page and search for mp3 URL
         run: |
           python3 << 'PYEOF'
-          import json, sys, time
-          sys.path.insert(0, "skills/free-music-generator/scripts")
-          from utils.api_util import request_tunee_api, resolve_access_key, API_TASK
+          import json, re, requests
 
-          with open("../gen_result.json") as f:
+          with open("gen_result.json") as f:
               gen_output = json.load(f)
-          item_id = gen_output[0]["id"]
-          print(f"Querying item_id={item_id}")
+          share_url = gen_output[0]["url"]
+          print(f"Fetching share page: {share_url}")
 
-          access_key = resolve_access_key(None)
+          resp = requests.get(share_url, timeout=30, headers={
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          })
+          print(f"Status: {resp.status_code}, length: {len(resp.text)} chars")
 
-          # Try a couple of likely field names for the query payload, in case one doesn't work
-          for payload_key in ["itemId", "item_id", "id"]:
-              print(f"\n=== trying payload key: {payload_key} ===")
-              try:
-                  resp = request_tunee_api(API_TASK, access_key, {payload_key: item_id}, timeout=30)
-                  print(json.dumps(resp.raw, ensure_ascii=False, indent=2))
-                  break  # stop once one works
-              except Exception as e:
-                  print(f"failed with {payload_key}: {e}")
+          # Search for any .mp3 URLs embedded in the page
+          mp3_urls = re.findall(r'https?://[^\s"\'\\]+\.mp3[^\s"\'\\]*', resp.text)
+          print(f"\nFound {len(mp3_urls)} mp3 URL(s):")
+          for u in set(mp3_urls):
+              print(u)
+
+          # Also search for auth_key pattern specifically, in case URL is split/escaped
+          auth_keys = re.findall(r'auth_key=[A-Za-z0-9\-]+', resp.text)
+          print(f"\nFound {len(auth_keys)} auth_key pattern(s):")
+          for k in set(auth_keys):
+              print(k)
+
+          if not mp3_urls:
+              print("\n--- No mp3 URL found. Printing first 3000 chars of page for inspection ---")
+              print(resp.text[:3000])
           PYEOF
