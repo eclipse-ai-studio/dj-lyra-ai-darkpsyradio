@@ -25,33 +25,42 @@ jobs:
         working-directory: tunee-skill
         run: pip install .
 
-      - name: List available models
-        working-directory: tunee-skill
-        env:
-          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
-        run: python skills/free-music-generator/scripts/list_models.py
-
-      - name: Check remaining credits
-        working-directory: tunee-skill
-        env:
-          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
-        run: python skills/free-music-generator/scripts/credits.py
-
-      - name: Print generate.py source (to inspect download URL logic)
-        working-directory: tunee-skill
-        run: cat skills/free-music-generator/scripts/generate.py
-
-      - name: Print any helper/client source files
-        working-directory: tunee-skill
-        run: |
-          find skills/free-music-generator -name "*.py" | xargs -I{} sh -c 'echo "=== {} ==="; cat {}'
-
-      - name: Generate ONE test track (prints raw output)
+      - name: Generate ONE test track
         working-directory: tunee-skill
         env:
           TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
         run: |
           python skills/free-music-generator/scripts/generate.py \
-            --title "DJ Lyra Ai - Test Fragment" \
+            --title "DJ Lyra Ai - Test Fragment 2" \
             --prompt "darkpsy, underground darkpsy label style, instrumental, 148 bpm, rolling bassline, fast driving kick, squelchy FM synth leads, organic atmospheric textures, psychedelic soundscapes, mysterious alien sound effects, hypnotic, nocturnal, aggressive, fast-paced" \
-            --model mureka_v9
+            --model mureka_v9 > ../gen_result.json
+          echo "--- generate.py output ---"
+          cat ../gen_result.json
+
+      - name: Poll music/query endpoint and print raw response
+        working-directory: tunee-skill
+        env:
+          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+        run: |
+          python3 << 'PYEOF'
+          import json, sys, time
+          sys.path.insert(0, "skills/free-music-generator/scripts")
+          from utils.api_util import request_tunee_api, resolve_access_key, API_TASK
+
+          with open("../gen_result.json") as f:
+              gen_output = json.load(f)
+          item_id = gen_output[0]["id"]
+          print(f"Querying item_id={item_id}")
+
+          access_key = resolve_access_key(None)
+
+          # Try a couple of likely field names for the query payload, in case one doesn't work
+          for payload_key in ["itemId", "item_id", "id"]:
+              print(f"\n=== trying payload key: {payload_key} ===")
+              try:
+                  resp = request_tunee_api(API_TASK, access_key, {payload_key: item_id}, timeout=30)
+                  print(json.dumps(resp.raw, ensure_ascii=False, indent=2))
+                  break  # stop once one works
+              except Exception as e:
+                  print(f"failed with {payload_key}: {e}")
+          PYEOF
