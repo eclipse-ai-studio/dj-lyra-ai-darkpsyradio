@@ -45,4 +45,4 @@ jobs:
           python skills/free-music-generator/scripts/generate.py \
             --title "DJ Lyra Ai - Test Fragment" \
             --prompt "darkpsy, underground darkpsy label style, instrumental, 148 bpm, rolling bassline, fast driving kick, squelchy FM synth leads, organic atmospheric textures, psychedelic soundscapes, mysterious alien sound effects, hypnotic, nocturnal, aggressive, fast-paced" \
-            --model PLACEHOLDER_MODEL_ID
+            --model mureka_v9
