@@ -1,0 +1,48 @@
+name: Test Tunee Generation
+
+on:
+  workflow_dispatch:  # manual trigger only, from the Actions tab
+
+jobs:
+  test-generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Tunee skill
+        uses: actions/checkout@v4
+        with:
+          repository: tuneeai/free-music-generator
+          path: tunee-skill
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Tunee skill dependencies
+        working-directory: tunee-skill
+        run: pip install .
+
+      - name: List available models
+        working-directory: tunee-skill
+        env:
+          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+        run: python skills/free-music-generator/scripts/list_models.py
+
+      - name: Check remaining credits
+        working-directory: tunee-skill
+        env:
+          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+        run: python skills/free-music-generator/scripts/credits.py
+
+      - name: Generate ONE test track (prints raw output)
+        working-directory: tunee-skill
+        env:
+          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+        run: |
+          python skills/free-music-generator/scripts/generate.py \
+            --title "DJ Lyra Ai - Test Fragment" \
+            --prompt "darkpsy, underground darkpsy label style, instrumental, 148 bpm, rolling bassline, fast driving kick, squelchy FM synth leads, organic atmospheric textures, psychedelic soundscapes, mysterious alien sound effects, hypnotic, nocturnal, aggressive, fast-paced" \
+            --model PLACEHOLDER_MODEL_ID
