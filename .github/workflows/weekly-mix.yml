@@ -1,1 +1,62 @@
+name: Weekly Mix Pipeline
 
+on:
+  workflow_dispatch:  # allows manual runs for testing / manual recovery
+  # schedule:
+  #   - cron: "0 19 * * 1"  # Monday 04:00 JST (19:00 UTC Sunday) - enable once tested
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Tunee skill
+        uses: actions/checkout@v4
+        with:
+          repository: tuneeai/free-music-generator
+          path: tunee-skill
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg (required by pydub)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Tunee skill dependencies
+        working-directory: tunee-skill
+        run: pip install .
+
+      - name: Install pipeline dependencies
+        run: pip install requests pydub internetarchive
+
+      - name: Build weekly mix (generate + crossfade)
+        env:
+          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+        run: python scripts/build_weekly_mix.py
+
+      - name: Upload mix to Internet Archive
+        if: success()
+        env:
+          IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
+          IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
+        run: python scripts/upload_to_archive.py
+
+      - name: Commit updated mixes.json back to the repo
+        if: success()
+        run: |
+          git config user.name "dj-lyra-ai-bot"
+          git config user.email "actions@github.com"
+          git add docs/mixes.json
+          git diff --staged --quiet || git commit -m "Add new weekly mix to archive list"
+          git push
+
+      - name: Send notification (only sends email on failure)
+        if: always()
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/notify.py
