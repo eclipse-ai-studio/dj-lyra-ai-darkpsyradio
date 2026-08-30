@@ -76,10 +76,8 @@ def main():
             send_email(
                 "【DJ Lyra Ai】新しいミックスができました(任意チェック)",
                 f"{detail}\n\n"
-                "気に入らない場合は、Internet Archive側のファイルを削除の上、\n"
-                "scripts/remove_mix.py --date <日付> でmixes.jsonからも削除し、\n"
-                "ワークフローを再実行してください。\n"
-                "特に問題なければ何もしなくて大丈夫です。土曜日に自動で公開されます。",
+                "気に入らない場合は、ミックスを作り直すだけでOKです(古いものは自動的に公開対象から外れます)。\n"
+                "気に入った場合、または特にチェックしない場合も、何もしなくて大丈夫です。土曜日に自動で公開されます。",
             )
         else:
             print(f"Pipeline succeeded (stage={stage}): {detail}")
