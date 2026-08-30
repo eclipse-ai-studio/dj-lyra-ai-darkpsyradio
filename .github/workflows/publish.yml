@@ -1,1 +1,40 @@
+name: Publish Mix
 
+on:
+  workflow_dispatch:  # manual runs for testing
+  # schedule:
+  #   - cron: "0 19 * * 5"  # Saturday 04:00 JST (19:00 UTC Friday) - enable once tested
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Publish newest unpublished mix (if any)
+        id: publish
+        run: python scripts/publish_mix.py
+
+      - name: Commit updated mixes.json back to the repo
+        run: |
+          git config user.name "dj-lyra-ai-bot"
+          git config user.email "actions@github.com"
+          git add docs/mixes.json
+          git diff --staged --quiet || git commit -m "Publish weekly mix"
+          git diff --staged --quiet || git push
+
+      - name: Send notification (only sends email on failure)
+        if: always()
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/notify.py
+
+      # X reminder posting will be added here once X API credentials are set up
