@@ -3,7 +3,8 @@
 DJ Lyra Ai - Upload weekly mix to Internet Archive
 =====================================================
 1. Uploads output/weekly_mix.mp3 to Internet Archive (permanent, free storage)
-2. Appends the new mix's info to docs/mixes.json (read by the GitHub Pages site)
+2. Appends the new mix's info to docs/mixes.json, flagged as unpublished
+   (a separate publish step decides when it actually goes live)
 
 Requires env vars: IA_ACCESS_KEY, IA_SECRET_KEY
 
@@ -82,7 +83,7 @@ def main():
     audio_url = f"https://archive.org/download/{identifier}/weekly_mix.mp3"
     print(f"[upload] OK: {mix_url}")
 
-    # --- append to docs/mixes.json for GitHub Pages ---
+    # --- append to docs/mixes.json, flagged unpublished ---
     MIXES_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     if MIXES_JSON_PATH.exists():
         mixes = json.loads(MIXES_JSON_PATH.read_text())
@@ -94,12 +95,19 @@ def main():
         "title": title,
         "archive_url": mix_url,
         "audio_url": audio_url,
+        "published": False,
+        "publish_date": None,
     })
 
     MIXES_JSON_PATH.write_text(json.dumps(mixes, ensure_ascii=False, indent=2))
-    print(f"[mixes.json] now has {len(mixes)} mix(es)")
+    print(f"[mixes.json] now has {len(mixes)} mix(es), newest is unpublished")
 
-    write_status("complete", True, f"{title} をInternet Archiveに保存し、公開リストを更新しました")
+    write_status(
+        "mix_ready",
+        True,
+        f"{title} をInternet Archiveに保存しました(未公開)。聴いて確認できます: {mix_url}\n"
+        f"土曜日に自動で公開されます。気に入らない場合は remove_mix.py で削除し、作り直してください。",
+    )
 
 
 if __name__ == "__main__":
