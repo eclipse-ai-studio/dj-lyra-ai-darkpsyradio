@@ -2,7 +2,9 @@
 """
 DJ Lyra Ai - Upload weekly mix to Internet Archive
 =====================================================
-1. Uploads output/weekly_mix.mp3 to Internet Archive (permanent, free storage)
+1. Uploads output/weekly_mix.mp3 to Internet Archive (permanent, free storage),
+   marked noindex so it doesn't show up in Archive.org search results before
+   the Doctor has had a chance to check it / it gets published on the official site
 2. Appends the new mix's info to docs/mixes.json, flagged as unpublished
    (a separate publish step decides when it actually goes live)
 
@@ -23,6 +25,8 @@ import internetarchive as ia
 MIX_PATH = Path("output/weekly_mix.mp3")
 MIXES_JSON_PATH = Path("docs/mixes.json")
 STATUS_PATH = Path("output/pipeline_status.json")
+
+IDENTIFIER_PREFIX = "dj-lyra-ai-darkpsyradio-mix"
 
 
 def write_status(stage: str, ok: bool, detail: str):
@@ -47,7 +51,7 @@ def main():
         sys.exit(1)
 
     today = date.today().isoformat()
-    identifier = f"dj-lyra-ai-darkpsy-mix-{today}"
+    identifier = f"{IDENTIFIER_PREFIX}-{today}"
     title = f"DJ Lyra Ai - Darkpsy Mix {today}"
 
     print(f"[upload] identifier: {identifier}")
@@ -66,6 +70,7 @@ def main():
                     "Autonomous AI-generated dark psytrance mix by DJ Lyra Ai, "
                     "Model-001 of Eclipse Ai Studio. Fully automated, no human DJ."
                 ),
+                "noindex": "true",
             },
             access_key=access_key,
             secret_key=secret_key,
@@ -106,7 +111,7 @@ def main():
         "mix_ready",
         True,
         f"{title} をInternet Archiveに保存しました(未公開)。聴いて確認できます: {mix_url}\n"
-        f"土曜日に自動で公開されます。気に入らない場合は remove_mix.py で削除し、作り直してください。",
+        f"土曜日に自動で公開されます。気に入らない場合は、もう一度ワークフローを実行して作り直してください。",
     )
 
 
