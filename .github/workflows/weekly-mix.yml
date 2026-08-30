@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout this repo
         uses: actions/checkout@v4
@@ -38,7 +39,7 @@ jobs:
           TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
         run: python scripts/build_weekly_mix.py
 
-      - name: Upload mix to Internet Archive
+      - name: Upload mix to Internet Archive (flagged unpublished)
         if: success()
         env:
           IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
@@ -51,10 +52,10 @@ jobs:
           git config user.name "dj-lyra-ai-bot"
           git config user.email "actions@github.com"
           git add docs/mixes.json
-          git diff --staged --quiet || git commit -m "Add new weekly mix to archive list"
+          git diff --staged --quiet || git commit -m "Add new weekly mix to archive list (unpublished)"
           git push
 
-      - name: Send notification (only sends email on failure)
+      - name: Send notification (mix-ready check-in email, or failure alert)
         if: always()
         env:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
