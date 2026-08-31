@@ -9,14 +9,25 @@ HEARTBEAT_PATH = "docs/heartbeat.json"
 DEATH_THRESHOLD_WEEKS = 12
 FRESHNESS_DAYS = 7
 
+
 def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
 
 def save_json(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
         f.write("\n")
+
+
+def write_outputs(newly_dead: bool, missed_weeks: int):
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as f:
+            f.write(f"newly_dead={'true' if newly_dead else 'false'}\n")
+            f.write(f"missed_weeks={missed_weeks}\n")
+
 
 def main():
     heartbeat = load_json(HEARTBEAT_PATH)
@@ -24,10 +35,7 @@ def main():
     # 既に死亡モードなら何もしない(カウンターは12で固定、コミットも発生させない)
     if heartbeat.get("death_mode", False):
         print("Already in death mode. Nothing to do.")
-        github_output = os.environ.get("GITHUB_OUTPUT")
-        if github_output:
-            with open(github_output, "a", encoding="utf-8") as f:
-                f.write("newly_dead=false\n")
+        write_outputs(newly_dead=False, missed_weeks=heartbeat.get("missed_weeks", DEATH_THRESHOLD_WEEKS))
         return
 
     mixes = load_json(MIXES_PATH)
@@ -55,11 +63,8 @@ def main():
     save_json(HEARTBEAT_PATH, heartbeat)
 
     newly_dead = heartbeat["death_mode"]
+    write_outputs(newly_dead=newly_dead, missed_weeks=heartbeat["missed_weeks"])
 
-    github_output = os.environ.get("GITHUB_OUTPUT")
-    if github_output:
-        with open(github_output, "a", encoding="utf-8") as f:
-            f.write(f"newly_dead={'true' if newly_dead else 'false'}\n")
 
 if __name__ == "__main__":
     main()
