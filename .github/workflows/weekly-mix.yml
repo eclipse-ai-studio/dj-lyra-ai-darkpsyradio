@@ -2,7 +2,7 @@ name: Weekly Mix Pipeline
 on:
   workflow_dispatch:  # allows manual runs for testing / manual recovery
   # schedule:
-  #   - cron: "0 19 * * 1"  # Monday 04:00 JST (19:00 UTC Sunday) - enable once tested
+  #   - cron: "0 19 * * 6"  # Sunday 04:00 JST (19:00 UTC Saturday) - enable once tested
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
