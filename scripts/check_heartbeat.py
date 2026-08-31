@@ -19,13 +19,20 @@ def save_json(path, data):
         f.write("\n")
 
 def main():
-    mixes = load_json(MIXES_PATH)
     heartbeat = load_json(HEARTBEAT_PATH)
 
+    # 既に死亡モードなら何もしない(カウンターは12で固定、コミットも発生させない)
+    if heartbeat.get("death_mode", False):
+        print("Already in death mode. Nothing to do.")
+        github_output = os.environ.get("GITHUB_OUTPUT")
+        if github_output:
+            with open(github_output, "a", encoding="utf-8") as f:
+                f.write("newly_dead=false\n")
+        return
+
+    mixes = load_json(MIXES_PATH)
     published = [m for m in mixes if m.get("published")]
     now = datetime.now(timezone.utc)
-
-    was_already_dead = heartbeat.get("death_mode", False)
 
     if published:
         latest = max(published, key=lambda m: m["date"])
@@ -47,9 +54,8 @@ def main():
     heartbeat["last_checked"] = now.isoformat()
     save_json(HEARTBEAT_PATH, heartbeat)
 
-    newly_dead = heartbeat["death_mode"] and not was_already_dead
+    newly_dead = heartbeat["death_mode"]
 
-    # 後続ステップ(X投稿・バナー表示トリガー)の条件分岐用に出力
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a", encoding="utf-8") as f:
