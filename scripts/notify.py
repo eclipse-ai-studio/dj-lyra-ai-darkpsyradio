@@ -9,6 +9,8 @@ describing the outcome.
 Behavior by stage:
   - "mix_ready" (success): sends an optional check-in email so the Doctor can
     listen and sanity-check the new mix before Saturday's publish.
+  - "publish_skipped" (success, but nothing to publish): sends an alert,
+    since this usually means weekly generation isn't producing new mixes.
   - other success stages (e.g. "publish"): no email, to avoid noise.
   - any failure: sends an alert email, subject includes the stage name.
   - no status file at all: assumes an unexpected crash/hang, sends a
@@ -19,7 +21,6 @@ Requires env vars: GMAIL_ADDRESS, GMAIL_APP_PASSWORD
 Usage:
     python scripts/notify.py
 """
-
 import json
 import os
 import smtplib
@@ -78,6 +79,13 @@ def main():
                 f"{detail}\n\n"
                 "気に入らない場合は、ミックスを作り直すだけでOKです(古いものは自動的に公開対象から外れます)。\n"
                 "気に入った場合、または特にチェックしない場合も、何もしなくて大丈夫です。土曜日に自動で公開されます。",
+            )
+        elif stage == "publish_skipped":
+            send_email(
+                "【DJ Lyra Ai】今週は公開できるミックスがありませんでした",
+                f"{detail}\n\n"
+                "通常は毎週の生成パイプラインで新しい未公開ミックスが用意されているはずです。"
+                "週次生成(Weekly Mix Pipeline)が正常に動いているか、GitHub Actionsのログを確認してください。",
             )
         else:
             print(f"Pipeline succeeded (stage={stage}): {detail}")
