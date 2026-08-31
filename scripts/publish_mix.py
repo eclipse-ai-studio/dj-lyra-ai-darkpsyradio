@@ -9,14 +9,11 @@ happen any day). Looks at docs/mixes.json:
     entries are left alone (harmless leftovers).
   - If no unpublished mixes exist, does nothing this week (no
     re-announcement of an already-published mix).
-
 Prints whether something was published, so the workflow can decide
 whether to trigger the X reminder step.
-
 Usage:
     python scripts/publish_mix.py
 """
-
 import json
 import sys
 from datetime import date
@@ -47,11 +44,15 @@ def main():
     if not unpublished:
         print("No unpublished mixes found. Nothing to publish this week.")
         print("PUBLISHED=false")
+        write_status(
+            "publish_skipped",
+            True,
+            "今週公開対象の未公開ミックスがありませんでした(生成が止まっている可能性があります)",
+        )
         return
 
     # pick the one with the newest date
     newest = max(unpublished, key=lambda m: m["date"])
-
     for m in mixes:
         if m is newest:
             m["published"] = True
@@ -62,7 +63,6 @@ def main():
     print(f"Published: {newest['title']} ({newest['date']})")
     print(f"Audio URL: {newest['audio_url']}")
     print("PUBLISHED=true")
-
     write_status("publish", True, f"{newest['title']} を公開しました")
 
 
