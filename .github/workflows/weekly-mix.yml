@@ -1,10 +1,8 @@
 name: Weekly Mix Pipeline
-
 on:
   workflow_dispatch:  # allows manual runs for testing / manual recovery
   # schedule:
   #   - cron: "0 19 * * 1"  # Monday 04:00 JST (19:00 UTC Sunday) - enable once tested
-
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -13,50 +11,57 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
+      - name: Check death mode
+        id: death_check
+        run: |
+          DEAD=$(python -c "import json; print(json.load(open('docs/heartbeat.json'))['death_mode'])")
+          echo "is_dead=$DEAD" >> "$GITHUB_OUTPUT"
+          if [ "$DEAD" = "True" ]; then
+            echo "::warning::Death mode is active. Skipping mix generation."
+          fi
+
       - name: Checkout Tunee skill
+        if: steps.death_check.outputs.is_dead != 'True'
         uses: actions/checkout@v4
         with:
           repository: tuneeai/free-music-generator
           path: tunee-skill
-
       - name: Set up Python
+        if: steps.death_check.outputs.is_dead != 'True'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install ffmpeg (required by pydub)
+        if: steps.death_check.outputs.is_dead != 'True'
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
       - name: Install Tunee skill dependencies
+        if: steps.death_check.outputs.is_dead != 'True'
         working-directory: tunee-skill
         run: pip install .
-
       - name: Install pipeline dependencies
+        if: steps.death_check.outputs.is_dead != 'True'
         run: pip install requests pydub internetarchive
-
       - name: Build weekly mix (generate + crossfade)
+        if: steps.death_check.outputs.is_dead != 'True'
         env:
           TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
         run: python scripts/build_weekly_mix.py
-
       - name: Upload mix to Internet Archive (flagged unpublished)
-        if: success()
+        if: success() && steps.death_check.outputs.is_dead != 'True'
         env:
           IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
           IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
         run: python scripts/upload_to_archive.py
-
       - name: Commit updated mixes.json back to the repo
-        if: success()
+        if: success() && steps.death_check.outputs.is_dead != 'True'
         run: |
           git config user.name "dj-lyra-ai-bot"
           git config user.email "actions@github.com"
           git add docs/mixes.json
           git diff --staged --quiet || git commit -m "Add new weekly mix to archive list (unpublished)"
           git push
-
       - name: Send notification (mix-ready check-in email, or failure alert)
-        if: always()
+        if: always() && steps.death_check.outputs.is_dead != 'True'
         env:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
