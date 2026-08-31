@@ -1,10 +1,8 @@
 name: Publish Mix
-
 on:
   workflow_dispatch:  # manual runs for testing
   # schedule:
   #   - cron: "0 19 * * 5"  # Saturday 04:00 JST (19:00 UTC Friday) - enable once tested
-
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,28 +11,36 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
+      - name: Check death mode
+        id: death_check
+        run: |
+          DEAD=$(python -c "import json; print(json.load(open('docs/heartbeat.json'))['death_mode'])")
+          echo "is_dead=$DEAD" >> "$GITHUB_OUTPUT"
+          if [ "$DEAD" = "True" ]; then
+            echo "::warning::Death mode is active. Skipping publish."
+          fi
+
       - name: Set up Python
+        if: steps.death_check.outputs.is_dead != 'True'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Publish newest unpublished mix (if any)
+        if: steps.death_check.outputs.is_dead != 'True'
         id: publish
         run: python scripts/publish_mix.py
-
       - name: Commit updated mixes.json back to the repo
+        if: steps.death_check.outputs.is_dead != 'True'
         run: |
           git config user.name "dj-lyra-ai-bot"
           git config user.email "actions@github.com"
           git add docs/mixes.json
           git diff --staged --quiet || git commit -m "Publish weekly mix"
           git diff --staged --quiet || git push
-
       - name: Send notification (only sends email on failure)
-        if: always()
+        if: always() && steps.death_check.outputs.is_dead != 'True'
         env:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify.py
-
       # X reminder posting will be added here once X API credentials are set up
