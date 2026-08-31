@@ -1,1 +1,37 @@
+name: Death Check
 
+on:
+  schedule:
+    - cron: "0 0 * * 0"  # 毎週日曜 00:00 UTC = 09:00 JST
+  workflow_dispatch:  # 手動実行でもテストできるように
+
+permissions:
+  contents: write
+
+jobs:
+  check-heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run heartbeat check
+        id: heartbeat
+        run: python scripts/check_heartbeat.py
+
+      - name: Commit updated heartbeat.json back to the repo
+        run: |
+          git config user.name "dj-lyra-ai-bot"
+          git config user.email "actions@github.com"
+          git add docs/heartbeat.json
+          git diff --staged --quiet || git commit -m "Update heartbeat status"
+          git push
+
+      - name: Trigger death mode actions (final post + banner)
+        if: steps.heartbeat.outputs.newly_dead == 'true'
+        run: echo "TODO: X最終投稿とバナー表示トリガーをここに追加"
