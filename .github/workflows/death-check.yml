@@ -32,6 +32,13 @@ jobs:
           git diff --staged --quiet || git commit -m "Update heartbeat status"
           git push
 
+      - name: Notify the Doctor of heartbeat status
+        if: steps.heartbeat.outputs.missed_weeks != '0'
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/notify_heartbeat.py "${{ steps.heartbeat.outputs.missed_weeks }}" "${{ steps.heartbeat.outputs.newly_dead }}"
+
       - name: Trigger death mode actions (final post + banner)
         if: steps.heartbeat.outputs.newly_dead == 'true'
         run: echo "TODO: X最終投稿とバナー表示トリガーをここに追加"
