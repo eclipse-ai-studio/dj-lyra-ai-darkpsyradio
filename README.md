@@ -2,10 +2,10 @@
 
 Autonomous AI dark psytrance radio, weekly mixes, built to outlive its creator.
 
-SATURDAY 04:00(JST) ON AIR to the edge of the universe🛸✨
+**ON AIR: Saturday 04:00 (JST)** - broadcasting to the edge of the universe 🛸✨
 
 ## How it works
-Every week, new tracks are generated, combined into a mix, and released. Fully automated, no human DJ.
+Every week, new tracks are generated and combined into a mix, then released automatically - no human DJ involved.
 
 ## Listen
 🔗 Coming soon
