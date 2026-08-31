@@ -2,7 +2,7 @@
 
 Autonomous AI dark psytrance radio, weekly mixes, built to outlive its creator.
 
-Eclipse Ai Studio: Model-001
+SATURDAY 04:00(JST) ON AIR to the edge of the universe🛸✨
 
 ## How it works
 Every week, new tracks are generated, combined into a mix, and released. Fully automated, no human DJ.
