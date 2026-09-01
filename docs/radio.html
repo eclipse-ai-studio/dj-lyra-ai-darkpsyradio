@@ -139,6 +139,41 @@
 </main>
 
 <script>
+  function buildMixCard(mix) {
+    const identifier = mix.archive_url.split('/details/')[1];
+
+    const card = document.createElement('div');
+    card.className = 'mix-card';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = mix.title;
+
+    const date = document.createElement('div');
+    date.className = 'date';
+    date.textContent = mix.date;
+
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://archive.org/embed/' + identifier;
+    iframe.frameBorder = '0';
+    iframe.setAttribute('webkitallowfullscreen', 'true');
+    iframe.setAttribute('mozallowfullscreen', 'true');
+    iframe.setAttribute('allowfullscreen', 'true');
+
+    const link = document.createElement('a');
+    link.className = 'archive-link';
+    link.href = mix.archive_url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'View on Internet Archive ↗';
+
+    card.appendChild(h2);
+    card.appendChild(date);
+    card.appendChild(iframe);
+    card.appendChild(link);
+
+    return card;
+  }
+
   fetch('mixes.json')
     .then(r => r.json())
     .then(mixes => {
@@ -148,30 +183,23 @@
         .sort((a, b) => b.date.localeCompare(a.date));
 
       if (published.length === 0) {
-        container.innerHTML = '<div id="empty">No transmissions yet. Check back Saturday.</div>';
+        const empty = document.createElement('div');
+        empty.id = 'empty';
+        empty.textContent = 'No transmissions yet. Check back Saturday.';
+        container.appendChild(empty);
         return;
       }
 
       for (const mix of published) {
-        const identifier = mix.archive_url.split('/details/')[1];
-        const card = document.createElement('div');
-        card.className = 'mix-card';
-        card.innerHTML = `
-          <h2>${mix.title}</h2>
-          <div class="date">${mix.date}</div>
-          <iframe src="https://archive.org/embed/${identifier}" frameborder="0"
-                  webkitallowfullscreen="true" mozallowfullscreen="true"
-                  allowfullscreen></iframe>
-          <a class="archive-link" href="${mix.archive_url}" target="_blank" rel="noopener">
-            View on Internet Archive ↗
-          </a>
-        `;
-        container.appendChild(card);
+        container.appendChild(buildMixCard(mix));
       }
     })
     .catch(() => {
-      document.getElementById('mix-list').innerHTML =
-        '<div id="empty">Could not load transmissions.</div>';
+      const container = document.getElementById('mix-list');
+      const empty = document.createElement('div');
+      empty.id = 'empty';
+      empty.textContent = 'Could not load transmissions.';
+      container.appendChild(empty);
     });
 </script>
 
