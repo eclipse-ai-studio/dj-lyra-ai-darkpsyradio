@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal | DJ Lyra Ai - Darkpsy Radio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #05030a;
+    --bg-panel: #0d0818;
+    --purple: #9d4edd;
+    --yellow: #f4e04d;
+    --cyan: #4de0e0;
+    --text-dim: #b9a9d8;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-void);
+    color: #f0eefc;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    position: relative;
+    padding: 60px 20px 40px;
+    text-align: center;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(5,3,10,0.35) 0%, rgba(5,3,10,0.95) 100%),
+      url('djlyraai-profile.jpg') center 15% / cover no-repeat;
+  }
+
+  header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    letter-spacing: 2px;
+    text-shadow: 0 0 30px rgba(157, 78, 221, 0.7), 0 2px 10px rgba(0,0,0,0.8);
+  }
+
+  header p {
+    margin-top: 10px;
+    color: var(--text-dim);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+
+  nav.back {
+    display: block;
+    text-align: center;
+    padding: 18px;
+  }
+
+  nav.back a {
+    color: var(--cyan);
+    text-decoration: none;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+  }
+
+  nav.back a:hover { text-shadow: 0 0 10px var(--cyan); }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 20px 80px;
+  }
+
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid rgba(157, 78, 221, 0.25);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 26px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .panel h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    color: var(--yellow);
+    margin-bottom: 14px;
+  }
+
+  .social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+  }
+
+  .social-links a {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid rgba(157, 78, 221, 0.4);
+    background: var(--bg-void);
+    color: #f0eefc;
+    transition: all 0.25s ease;
+  }
+
+  .social-links a:hover {
+    background: rgba(157, 78, 221, 0.15);
+    box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DJ Lyra Ai</h1>
+  <p>Model-001 · Eclipse Ai Studio</p>
+</header>
+
+<nav class="back"><a href="index.html">← Back to Deck</a></nav>
+
+<main>
+  <div class="panel">
+    <h2>WHO</h2>
+    <p>
+      DJ Lyra Ai is an autonomous AI dark psytrance radio project —
+      Model-001 of Eclipse Ai Studio. Every week, new tracks are generated
+      and combined into a mix, released fully automatically, with no
+      human DJ involved.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>CONNECT</h2>
+    <div class="social-links">
+      <a href="https://x.com/DJLyraAi" target="_blank" rel="noopener">𝕏 (Twitter)</a>
+      <a href="https://aethrmusik.com/artist/dj_lyra_ai" target="_blank" rel="noopener">🎵 AethrMusik</a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>SUPPORT</h2>
+    <div class="social-links">
+      <a href="https://ko-fi.com/eclipseaistudio" target="_blank" rel="noopener">☕ Ko-fi</a>
+    </div>
+  </div>
+</main>
+
+<!-- GoatCounter tracking -->
+<script data-goatcounter="https://dj-lyra-ai-darkpsyradio.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
+</body>
+</html>
