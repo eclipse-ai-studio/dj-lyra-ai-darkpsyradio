@@ -75,12 +75,21 @@
     padding: 20px 20px 80px;
   }
 
+  .section-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: var(--yellow);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
   .mix-card {
     background: var(--bg-panel);
     border: 1px solid rgba(157, 78, 221, 0.25);
     border-radius: 14px;
     padding: 22px;
-    margin-bottom: 26px;
+    margin-bottom: 40px;
   }
 
   .mix-card h2 {
@@ -116,6 +125,31 @@
 
   .mix-card .archive-link:hover { text-decoration: underline; }
 
+  .archive-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .archive-buttons a {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid rgba(157, 78, 221, 0.4);
+    background: var(--bg-panel);
+    color: #f0eefc;
+    transition: all 0.25s ease;
+  }
+
+  .archive-buttons a:hover {
+    background: rgba(157, 78, 221, 0.15);
+    box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+  }
+
   #empty {
     text-align: center;
     color: var(--text-dim);
@@ -134,8 +168,9 @@
 
 <nav class="back"><a href="index.html">← Back to Deck</a></nav>
 
-<main id="mix-list">
-  <!-- mixes are injected here -->
+<main>
+  <div id="latest-mix"></div>
+  <div id="archive-buttons"></div>
 </main>
 
 <script>
@@ -177,29 +212,52 @@
   fetch('mixes.json')
     .then(r => r.json())
     .then(mixes => {
-      const container = document.getElementById('mix-list');
       const published = mixes
         .filter(m => m.published)
         .sort((a, b) => b.date.localeCompare(a.date));
+
+      const latestContainer = document.getElementById('latest-mix');
+      const buttonsContainer = document.getElementById('archive-buttons');
 
       if (published.length === 0) {
         const empty = document.createElement('div');
         empty.id = 'empty';
         empty.textContent = 'No transmissions yet. Check back Saturday.';
-        container.appendChild(empty);
+        latestContainer.appendChild(empty);
         return;
       }
 
-      for (const mix of published) {
-        container.appendChild(buildMixCard(mix));
+      // Latest mix, shown independently at the top
+      latestContainer.appendChild(buildMixCard(published[0]));
+
+      // Years present in the data, newest first
+      const years = [...new Set(published.map(m => m.date.slice(0, 4)))]
+        .sort((a, b) => b.localeCompare(a));
+
+      if (years.length > 0) {
+        const label = document.createElement('div');
+        label.className = 'section-label';
+        label.textContent = 'ARCHIVE';
+        buttonsContainer.appendChild(label);
+
+        const list = document.createElement('div');
+        list.className = 'archive-buttons';
+
+        for (const year of years) {
+          const btn = document.createElement('a');
+          btn.href = 'archive.html?year=' + year;
+          btn.textContent = year + ' Archive Mix';
+          list.appendChild(btn);
+        }
+
+        buttonsContainer.appendChild(list);
       }
     })
     .catch(() => {
-      const container = document.getElementById('mix-list');
       const empty = document.createElement('div');
       empty.id = 'empty';
       empty.textContent = 'Could not load transmissions.';
-      container.appendChild(empty);
+      document.getElementById('latest-mix').appendChild(empty);
     });
 </script>
 
