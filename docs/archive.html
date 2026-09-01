@@ -1,1 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archive | DJ Lyra Ai - Darkpsy Radio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #05030a;
+    --bg-panel: #0d0818;
+    --purple: #9d4edd;
+    --yellow: #f4e04d;
+    --cyan: #4de0e0;
+    --text-dim: #b9a9d8;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-void);
+    color: #f0eefc;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 50px 20px 20px;
+    text-align: center;
+  }
+
+  header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+  }
+
+  header p {
+    margin-top: 10px;
+    color: var(--text-dim);
+  }
+
+  nav.back {
+    display: block;
+    text-align: center;
+    padding: 18px;
+  }
+
+  nav.back a {
+    color: var(--cyan);
+    text-decoration: none;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+  }
+
+  nav.back a:hover { text-shadow: 0 0 10px var(--cyan); }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 20px 20px 80px;
+  }
+
+  .mix-card {
+    background: var(--bg-panel);
+    border: 1px solid rgba(157, 78, 221, 0.25);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 26px;
+  }
+
+  .mix-card h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--yellow);
+    margin-bottom: 4px;
+  }
+
+  .mix-card .date {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+
+  .mix-card iframe {
+    width: 100%;
+    height: 60px;
+    border: 0;
+    border-radius: 8px;
+  }
+
+  .mix-card .archive-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: var(--purple);
+    text-decoration: none;
+  }
+
+  .mix-card .archive-link:hover { text-decoration: underline; }
+
+  #empty {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 60px 20px;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="archive-title">Archive</h1>
+  <p>Transmissions from DJ Lyra Ai</p>
+</header>
+
+<nav class="back"><a href="radio.html">← Back to Radio</a></nav>
+
+<main id="mix-list"></main>
+
+<script>
+  function buildMixCard(mix) {
+    const identifier = mix.archive_url.split('/details/')[1];
+
+    const card = document.createElement('div');
+    card.className = 'mix-card';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = mix.title;
+
+    const date = document.createElement('div');
+    date.className = 'date';
+    date.textContent = mix.date;
+
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://archive.org/embed/' + identifier;
+    iframe.frameBorder = '0';
+    iframe.setAttribute('webkitallowfullscreen', 'true');
+    iframe.setAttribute('mozallowfullscreen', 'true');
+    iframe.setAttribute('allowfullscreen', 'true');
+
+    const link = document.createElement('a');
+    link.className = 'archive-link';
+    link.href = mix.archive_url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'View on Internet Archive ↗';
+
+    card.appendChild(h2);
+    card.appendChild(date);
+    card.appendChild(iframe);
+    card.appendChild(link);
+
+    return card;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const year = params.get('year');
+
+  if (year) {
+    document.getElementById('archive-title').textContent = year + ' Archive Mix';
+  }
+
+  fetch('mixes.json')
+    .then(r => r.json())
+    .then(mixes => {
+      const container = document.getElementById('mix-list');
+      let filtered = mixes.filter(m => m.published);
+
+      if (year) {
+        filtered = filtered.filter(m => m.date.slice(0, 4) === year);
+      }
+
+      filtered.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.id = 'empty';
+        empty.textContent = 'No transmissions found for this year.';
+        container.appendChild(empty);
+        return;
+      }
+
+      for (const mix of filtered) {
+        container.appendChild(buildMixCard(mix));
+      }
+    })
+    .catch(() => {
+      const container = document.getElementById('mix-list');
+      const empty = document.createElement('div');
+      empty.id = 'empty';
+      empty.textContent = 'Could not load transmissions.';
+      container.appendChild(empty);
+    });
+</script>
+
+<!-- GoatCounter tracking -->
+<script data-goatcounter="https://dj-lyra-ai-darkpsyradio.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
+</body>
+</html>
