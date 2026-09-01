@@ -41,4 +41,5 @@ jobs:
 
       - name: Trigger death mode actions (final post + banner)
         if: steps.heartbeat.outputs.newly_dead == 'true'
-        run: echo "TODO: X最終投稿とバナー表示トリガーをここに追加"
+        run: |
+          echo "TODO: X最終投稿とバナー表示トリガーをここに追加"
