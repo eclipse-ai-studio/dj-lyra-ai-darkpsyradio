@@ -27,13 +27,17 @@
   }
 
   header {
-    position: relative;
-    padding: 60px 20px 40px;
+    padding: 40px 20px 20px;
     text-align: center;
-    overflow: hidden;
-    background:
-      linear-gradient(180deg, rgba(5,3,10,0.4) 0%, rgba(5,3,10,0.95) 100%),
-      url('djlyraai-mixes.png') center 20% / cover no-repeat;
+  }
+
+  header img.hero {
+    width: 55%;
+    max-width: 300px;
+    border-radius: 16px;
+    box-shadow: 0 0 50px rgba(157, 78, 221, 0.35);
+    display: block;
+    margin: 0 auto 24px;
   }
 
   header h1 {
@@ -41,13 +45,12 @@
     font-weight: 900;
     font-size: clamp(1.8rem, 5vw, 2.8rem);
     letter-spacing: 2px;
-    text-shadow: 0 0 30px rgba(157, 78, 221, 0.7), 0 2px 10px rgba(0,0,0,0.8);
+    text-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
   }
 
   header p {
     margin-top: 10px;
     color: var(--text-dim);
-    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
   }
 
   nav.back {
@@ -124,11 +127,12 @@
 <body>
 
 <header>
+  <img class="hero" src="djlyraai-mixes.png" alt="DJ Lyra Ai">
   <h1>Darkpsy Mixes</h1>
   <p>Weekly transmissions from DJ Lyra Ai</p>
 </header>
 
-<nav class="back"><a href="index.html">← Back to Radio</a></nav>
+<nav class="back"><a href="index.html">← Back to Deck</a></nav>
 
 <main id="mix-list">
   <!-- mixes are injected here -->
