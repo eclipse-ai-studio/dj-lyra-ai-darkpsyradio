@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install dependencies
+        run: pip install requests requests_oauthlib
+
       - name: Run heartbeat check
         id: heartbeat
         run: python scripts/check_heartbeat.py
@@ -39,7 +42,16 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify_heartbeat.py "${{ steps.heartbeat.outputs.missed_weeks }}" "${{ steps.heartbeat.outputs.newly_dead }}"
 
-      - name: Trigger death mode actions (final post + banner)
+      - name: Post final announcement to X
         if: steps.heartbeat.outputs.newly_dead == 'true'
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         run: |
-          echo "TODO: X最終投稿とバナー表示トリガーをここに追加"
+          python scripts/post_to_x.py "📡 Transmission ends here.
+          This message is posted automatically upon the creator's death.
+          No new mixes will follow. Thank you for listening.
+          The archive remains open, forever. 🛸
+          https://dj-lyra-ai-darkpsyradio.github.io/dj-lyra-ai-darkpsyradio/"
