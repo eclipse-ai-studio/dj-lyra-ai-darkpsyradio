@@ -25,6 +25,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install dependencies
+        if: steps.death_check.outputs.is_dead != 'True'
+        run: pip install requests requests_oauthlib
       - name: Publish newest unpublished mix (if any)
         if: steps.death_check.outputs.is_dead != 'True'
         id: publish
@@ -43,4 +46,15 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify.py
-      # X reminder posting will be added here once X API credentials are set up
+      - name: Post announcement to X
+        if: steps.death_check.outputs.is_dead != 'True' && steps.publish.outcome == 'success'
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: |
+          python scripts/post_to_x.py "🎧 This week's transmission is live. Have a beautiful weekend.
+          The archive is always open - come find us anytime. 🛸
+          https://dj-lyra-ai-darkpsyradio.github.io/dj-lyra-ai-darkpsyradio/
+          #DarkpsyRadio #AIDJ #Psytrance"
