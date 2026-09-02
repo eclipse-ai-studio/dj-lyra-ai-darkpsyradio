@@ -9,12 +9,13 @@ happen any day). Looks at docs/mixes.json:
     entries are left alone (harmless leftovers).
   - If no unpublished mixes exist, does nothing this week (no
     re-announcement of an already-published mix).
-Prints whether something was published, so the workflow can decide
-whether to trigger the X reminder step.
+Writes a "published" GitHub Actions output (true/false) so the workflow
+can decide whether to trigger the X announcement step.
 Usage:
     python scripts/publish_mix.py
 """
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -32,10 +33,19 @@ def write_status(stage: str, ok: bool, detail: str):
     }, ensure_ascii=False, indent=2))
 
 
+def write_github_output(published: bool, title: str = "", url: str = ""):
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as f:
+            f.write(f"published={'true' if published else 'false'}\n")
+            f.write(f"title={title}\n")
+            f.write(f"url={url}\n")
+
+
 def main():
     if not MIXES_JSON_PATH.exists():
         print("mixes.json does not exist. Nothing to publish.")
-        print("PUBLISHED=false")
+        write_github_output(published=False)
         return
 
     mixes = json.loads(MIXES_JSON_PATH.read_text())
@@ -43,12 +53,12 @@ def main():
 
     if not unpublished:
         print("No unpublished mixes found. Nothing to publish this week.")
-        print("PUBLISHED=false")
         write_status(
             "publish_skipped",
             True,
             "今週公開対象の未公開ミックスがありませんでした(生成が止まっている可能性があります)",
         )
+        write_github_output(published=False)
         return
 
     # pick the one with the newest date
@@ -62,8 +72,8 @@ def main():
 
     print(f"Published: {newest['title']} ({newest['date']})")
     print(f"Audio URL: {newest['audio_url']}")
-    print("PUBLISHED=true")
     write_status("publish", True, f"{newest['title']} を公開しました")
+    write_github_output(published=True, title=newest["title"])
 
 
 if __name__ == "__main__":
