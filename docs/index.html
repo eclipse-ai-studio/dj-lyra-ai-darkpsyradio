@@ -205,7 +205,7 @@
 
   <div id="onair">
     <div class="dot"></div>
-    <span id="onair-label">ON AIR</span>
+    <span>ON AIR</span>
   </div>
 
   <nav>
@@ -257,10 +257,8 @@
     .then(r => r.json())
     .then(data => {
       const el = document.getElementById('onair');
-      const label = document.getElementById('onair-label');
       if (data.death_mode) {
         el.classList.add('off');
-        label.textContent = 'OFF AIR';
       }
     })
     .catch(() => {});
