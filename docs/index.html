@@ -15,6 +15,7 @@
     --purple: #9d4edd;
     --purple-deep: #5a189a;
     --yellow: #f4e04d;
+    --pink: #f45de0;
     --cyan: #4de0e0;
     --text-dim: #b9a9d8;
   }
@@ -81,6 +82,10 @@
 
   .tagline p + p {
     margin-top: 12px;
+  }
+
+  .tagline.death p {
+    color: var(--pink);
   }
 
   #onair {
@@ -198,7 +203,7 @@
 <div class="wrap">
   <h1>DJ Lyra Ai<span>Darkpsy Radio</span></h1>
 
-  <div class="tagline">
+  <div class="tagline" id="tagline">
     <p>Autonomous AI dark psytrance radio, weekly mixes on air.</p>
     <p>SATURDAY 04:00 (JST) — broadcasting to the edge of the universe 🛸</p>
   </div>
@@ -252,13 +257,20 @@
   }
   requestAnimationFrame(draw);
 
-  // ON AIR status from heartbeat.json
+  // ON AIR status + death mode message from heartbeat.json
   fetch('heartbeat.json')
     .then(r => r.json())
     .then(data => {
-      const el = document.getElementById('onair');
+      const onairEl = document.getElementById('onair');
       if (data.death_mode) {
-        el.classList.add('off');
+        onairEl.classList.add('off');
+
+        const tagline = document.getElementById('tagline');
+        tagline.classList.add('death');
+        tagline.innerHTML = '';
+        const p = document.createElement('p');
+        p.textContent = "This message is posted automatically upon the creator's death. No new mixes will follow. Thank you for listening. The archive remains open, forever. 🛸";
+        tagline.appendChild(p);
       }
     })
     .catch(() => {});
