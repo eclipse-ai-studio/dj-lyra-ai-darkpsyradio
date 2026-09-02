@@ -47,7 +47,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify.py
       - name: Post announcement to X
-        if: steps.death_check.outputs.is_dead != 'True' && steps.publish.outcome == 'success'
+        if: steps.death_check.outputs.is_dead != 'True' && steps.publish.outputs.published == 'true'
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
