@@ -6,5 +6,13 @@
     "audio_url": "https://archive.org/download/dj-lyra-ai-darkpsyradio-mix-2026-08-30/weekly_mix.mp3",
     "published": true,
     "publish_date": "2026-08-30"
+  },
+  {
+    "date": "2026-09-03",
+    "title": "DJ Lyra Ai - Darkpsy Mix (generated 2026-09-03)",
+    "archive_url": "https://archive.org/details/dj-lyra-ai-darkpsyradio-mix-2026-09-03",
+    "audio_url": "https://archive.org/download/dj-lyra-ai-darkpsyradio-mix-2026-09-03/djlyraai_weekly_mix.mp3",
+    "published": false,
+    "publish_date": null
   }
 ]
