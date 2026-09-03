@@ -6,7 +6,8 @@ DJ Lyra Ai - Upload weekly mix to Internet Archive
    marked noindex so it doesn't show up in Archive.org search results before
    the Doctor has had a chance to check it / it gets published on the official site
 2. Appends the new mix's info to docs/mixes.json, flagged as unpublished
-   (a separate publish step decides when it actually goes live)
+   (a separate publish step decides when it actually goes live, and sets the
+   final public-facing title using the publish date)
 
 Requires env vars: IA_ACCESS_KEY, IA_SECRET_KEY
 
@@ -27,6 +28,7 @@ MIXES_JSON_PATH = Path("docs/mixes.json")
 STATUS_PATH = Path("output/pipeline_status.json")
 
 IDENTIFIER_PREFIX = "dj-lyra-ai-darkpsyradio-mix"
+UPLOAD_FILENAME = "djlyraai_weekly_mix.mp3"
 
 
 def write_status(stage: str, ok: bool, detail: str):
@@ -52,16 +54,19 @@ def main():
 
     today = date.today().isoformat()
     identifier = f"{IDENTIFIER_PREFIX}-{today}"
-    title = f"DJ Lyra Ai - Darkpsy Mix {today}"
+    # This is a placeholder title, only used on Internet Archive's own item
+    # page. The public-facing title shown on the site is set later, at
+    # publish time, using the actual publish date.
+    ia_title = f"DJ Lyra Ai - Darkpsy Mix (generated {today})"
 
     print(f"[upload] identifier: {identifier}")
 
     try:
         result = ia.upload(
             identifier,
-            files={"weekly_mix.mp3": str(MIX_PATH)},
+            files={UPLOAD_FILENAME: str(MIX_PATH)},
             metadata={
-                "title": title,
+                "title": ia_title,
                 "mediatype": "audio",
                 "collection": "opensource_audio",
                 "creator": "DJ Lyra Ai",
@@ -85,10 +90,12 @@ def main():
         sys.exit(1)
 
     mix_url = f"https://archive.org/details/{identifier}"
-    audio_url = f"https://archive.org/download/{identifier}/weekly_mix.mp3"
+    audio_url = f"https://archive.org/download/{identifier}/{UPLOAD_FILENAME}"
     print(f"[upload] OK: {mix_url}")
 
     # --- append to docs/mixes.json, flagged unpublished ---
+    # title is a placeholder here; publish_mix.py sets the final public
+    # title using the actual publish date once this mix goes live.
     MIXES_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     if MIXES_JSON_PATH.exists():
         mixes = json.loads(MIXES_JSON_PATH.read_text())
@@ -97,7 +104,7 @@ def main():
 
     mixes.append({
         "date": today,
-        "title": title,
+        "title": ia_title,
         "archive_url": mix_url,
         "audio_url": audio_url,
         "published": False,
@@ -110,7 +117,7 @@ def main():
     write_status(
         "mix_ready",
         True,
-        f"{title} をInternet Archiveに保存しました(未公開)。聴いて確認できます: {mix_url}\n"
+        f"新しいミックスをInternet Archiveに保存しました(未公開)。聴いて確認できます: {mix_url}\n"
         f"土曜日に自動で公開されます。気に入らない場合は、もう一度ワークフローを実行して作り直してください。",
     )
 
