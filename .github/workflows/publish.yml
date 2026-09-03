@@ -47,7 +47,8 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify.py
       - name: Post announcement to X
-        if: steps.death_check.outputs.is_dead != 'True' && steps.publish.outputs.published == 'true'
+        # TEMPORARILY DISABLED FOR TESTING - re-enable after test run confirms pipeline works
+        if: false
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
@@ -56,5 +57,5 @@ jobs:
         run: |
           python scripts/post_to_x.py "🎧 This week's transmission is live. Have a beautiful weekend.
           The archive is always open - come find us anytime. 🛸
-          https://dj-lyra-ai-darkpsyradio.github.io/dj-lyra-ai-darkpsyradio/
+          https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/
           #DarkpsyRadio #AIDJ #Psytrance"
