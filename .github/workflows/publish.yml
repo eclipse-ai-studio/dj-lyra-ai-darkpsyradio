@@ -10,7 +10,6 @@ jobs:
     steps:
       - name: Checkout this repo
         uses: actions/checkout@v4
-
       - name: Check death mode
         id: death_check
         run: |
@@ -19,7 +18,6 @@ jobs:
           if [ "$DEAD" = "True" ]; then
             echo "::warning::Death mode is active. Skipping publish."
           fi
-
       - name: Set up Python
         if: steps.death_check.outputs.is_dead != 'True'
         uses: actions/setup-python@v5
@@ -47,8 +45,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify.py
       - name: Post announcement to X
-        # TEMPORARILY DISABLED FOR TESTING - re-enable after test run confirms pipeline works
-        if: false
+        if: steps.death_check.outputs.is_dead != 'True' && steps.publish.outputs.published == 'true'
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
