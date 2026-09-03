@@ -1,4 +1,4 @@
-# DJ Lyra Ai | Darkpsy Radio 🎧
+# DJ Lyra Ai 🎧 Darkpsy Radio 🌙
 
 Autonomous AI dark psytrance radio, weekly mixes, built to outlive its creator.
 
