@@ -80,14 +80,7 @@
     font-weight: 700;
     letter-spacing: 0.5px;
     color: var(--yellow);
-    margin-bottom: 4px;
-  }
-
-  .mix-card .date {
-    font-size: 0.8rem;
-    color: var(--text-dim);
     margin-bottom: 16px;
-    letter-spacing: 1px;
   }
 
   .mix-card audio {
@@ -122,10 +115,6 @@
     const h2 = document.createElement('h2');
     h2.textContent = mix.title;
 
-    const date = document.createElement('div');
-    date.className = 'date';
-    date.textContent = mix.publish_date;
-
     const audio = document.createElement('audio');
     audio.controls = true;
     audio.preload = 'none';
@@ -135,7 +124,6 @@
     audio.appendChild(source);
 
     card.appendChild(h2);
-    card.appendChild(date);
     card.appendChild(audio);
 
     return card;
