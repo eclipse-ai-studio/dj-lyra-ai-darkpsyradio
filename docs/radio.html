@@ -108,22 +108,10 @@
     letter-spacing: 1px;
   }
 
-  .mix-card iframe {
+  .mix-card audio {
     width: 100%;
-    height: 60px;
-    border: 0;
-    border-radius: 8px;
+    height: 40px;
   }
-
-  .mix-card .archive-link {
-    display: inline-block;
-    margin-top: 12px;
-    font-size: 0.75rem;
-    color: var(--purple);
-    text-decoration: none;
-  }
-
-  .mix-card .archive-link:hover { text-decoration: underline; }
 
   .archive-buttons {
     display: flex;
@@ -175,8 +163,6 @@
 
 <script>
   function buildMixCard(mix) {
-    const identifier = mix.archive_url.split('/details/')[1];
-
     const card = document.createElement('div');
     card.className = 'mix-card';
 
@@ -185,26 +171,19 @@
 
     const date = document.createElement('div');
     date.className = 'date';
-    date.textContent = mix.date;
+    date.textContent = mix.publish_date;
 
-    const iframe = document.createElement('iframe');
-    iframe.src = 'https://archive.org/embed/' + identifier;
-    iframe.frameBorder = '0';
-    iframe.setAttribute('webkitallowfullscreen', 'true');
-    iframe.setAttribute('mozallowfullscreen', 'true');
-    iframe.setAttribute('allowfullscreen', 'true');
-
-    const link = document.createElement('a');
-    link.className = 'archive-link';
-    link.href = mix.archive_url;
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = 'View on Internet Archive ↗';
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload = 'none';
+    const source = document.createElement('source');
+    source.src = mix.audio_url;
+    source.type = 'audio/mpeg';
+    audio.appendChild(source);
 
     card.appendChild(h2);
     card.appendChild(date);
-    card.appendChild(iframe);
-    card.appendChild(link);
+    card.appendChild(audio);
 
     return card;
   }
@@ -214,7 +193,7 @@
     .then(mixes => {
       const published = mixes
         .filter(m => m.published)
-        .sort((a, b) => b.date.localeCompare(a.date));
+        .sort((a, b) => b.publish_date.localeCompare(a.publish_date));
 
       const latestContainer = document.getElementById('latest-mix');
       const buttonsContainer = document.getElementById('archive-buttons');
@@ -231,7 +210,7 @@
       latestContainer.appendChild(buildMixCard(published[0]));
 
       // Years present in the data, newest first
-      const years = [...new Set(published.map(m => m.date.slice(0, 4)))]
+      const years = [...new Set(published.map(m => m.publish_date.slice(0, 4)))]
         .sort((a, b) => b.localeCompare(a));
 
       if (years.length > 0) {
