@@ -1,8 +1,8 @@
 name: Publish Mix
 on:
   workflow_dispatch:  # manual runs for testing
-  # schedule:
-  #   - cron: "0 19 * * 5"  # Saturday 04:00 JST (19:00 UTC Friday) - enable once tested
+  schedule:
+    - cron: "0 19 * * 5"  # Saturday 04:00 JST (19:00 UTC Friday)
 jobs:
   publish:
     runs-on: ubuntu-latest
