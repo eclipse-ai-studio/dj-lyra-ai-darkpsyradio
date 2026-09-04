@@ -13,6 +13,7 @@
     --bg-panel: #0d0818;
     --purple: #9d4edd;
     --yellow: #f4e04d;
+    --pink: #f45de0;
     --cyan: #4de0e0;
     --text-dim: #b9a9d8;
   }
@@ -85,11 +86,23 @@
   }
 
   .mix-card {
+    position: relative;
     background: var(--bg-panel);
     border: 1px solid rgba(157, 78, 221, 0.25);
     border-radius: 14px;
     padding: 22px;
     margin-bottom: 40px;
+  }
+
+  .mix-card .new-tag {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    color: var(--pink);
+    text-shadow: 0 0 8px rgba(244, 93, 224, 0.8), 0 0 16px rgba(244, 93, 224, 0.4);
   }
 
   .mix-card h2 {
@@ -155,9 +168,16 @@
 </main>
 
 <script>
-  function buildMixCard(mix) {
+  function buildMixCard(mix, isNew) {
     const card = document.createElement('div');
     card.className = 'mix-card';
+
+    if (isNew) {
+      const tag = document.createElement('div');
+      tag.className = 'new-tag';
+      tag.textContent = 'NEW';
+      card.appendChild(tag);
+    }
 
     const h2 = document.createElement('h2');
     h2.textContent = mix.title;
@@ -194,8 +214,8 @@
         return;
       }
 
-      // Latest mix, shown independently at the top
-      latestContainer.appendChild(buildMixCard(published[0]));
+      // Latest mix, shown independently at the top, tagged NEW
+      latestContainer.appendChild(buildMixCard(published[0], true));
 
       // Years present in the data, newest first
       const years = [...new Set(published.map(m => m.publish_date.slice(0, 4)))]
