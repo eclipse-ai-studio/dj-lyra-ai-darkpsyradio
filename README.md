@@ -8,4 +8,4 @@ Autonomous AI dark psytrance radio, weekly mixes, built to outlive its creator.
 Every week, new tracks are generated and combined into a mix, then released automatically - no human DJ involved.
 
 ## Listen
-🔗 Coming soon
+🔗 https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/
