@@ -38,8 +38,8 @@ MODEL_ID = "mureka_v9"
 
 TARGET_TRACKS = 20
 MAX_CONSECUTIVE_FAILURES = 10
-GENERATION_WAIT_SECONDS = 90  # time to wait before checking the share page
-GENERATION_SUBPROCESS_TIMEOUT = 180  # seconds; kill a hung generate.py call
+GENERATION_WAIT_SECONDS = 300  # time to wait before checking the share page
+GENERATION_SUBPROCESS_TIMEOUT = 300  # seconds; kill a hung generate.py call
 
 # 4 bars at 148 BPM: 60/148 * 4 beats/bar * 4 bars = ~6.49s
 CROSSFADE_MS = int(60 / 148 * 4 * 4 * 1000)
