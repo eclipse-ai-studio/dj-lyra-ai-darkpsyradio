@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Checkout this repo
         uses: actions/checkout@v4
+
       - name: Check death mode
         id: death_check
         run: |
@@ -18,6 +19,7 @@ jobs:
           if [ "$DEAD" = "True" ]; then
             echo "::warning::Death mode is active. Skipping publish."
           fi
+
       - name: Set up Python
         if: steps.death_check.outputs.is_dead != 'True'
         uses: actions/setup-python@v5
@@ -52,7 +54,6 @@ jobs:
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         run: |
-          python scripts/post_to_x.py "🎧 This week's transmission is live. Have a beautiful weekend.
-          The archive is always open - come find us anytime. 🛸
+          python scripts/post_to_x.py "📡 This week's transmission is live. Have a beautiful weekend. The archive is always open - come find us anytime. 🛸✨
           https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/
-          #DarkpsyRadio #AIDJ #Psytrance"
+          #DarkpsyRadio #AIDJ #Darkpsy"
