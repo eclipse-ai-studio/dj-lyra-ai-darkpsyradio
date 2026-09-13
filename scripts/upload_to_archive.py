@@ -9,6 +9,10 @@ DJ Lyra Ai - Upload weekly mix to Internet Archive
    (a separate publish step decides when it actually goes live, and sets the
    final public-facing title using the publish date)
 
+The Internet Archive identifier includes a time component (not just the date)
+so that manually running this more than once on the same day never overwrites
+a previous upload.
+
 Requires env vars: IA_ACCESS_KEY, IA_SECRET_KEY
 
 Usage:
@@ -18,7 +22,7 @@ Usage:
 import json
 import os
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import internetarchive as ia
@@ -53,7 +57,9 @@ def main():
         sys.exit(1)
 
     today = date.today().isoformat()
-    identifier = f"{IDENTIFIER_PREFIX}-{today}"
+    now_stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    # identifier includes a time component so same-day re-runs don't overwrite each other
+    identifier = f"{IDENTIFIER_PREFIX}-{now_stamp}"
     # This is a placeholder title, only used on Internet Archive's own item
     # page. The public-facing title shown on the site is set later, at
     # publish time, using the actual publish date.
