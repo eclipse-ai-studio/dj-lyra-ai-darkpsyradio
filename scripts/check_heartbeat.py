@@ -39,14 +39,15 @@ def main():
         return
 
     mixes = load_json(MIXES_PATH)
-    published = [m for m in mixes if m.get("published")]
+    published = [m for m in mixes if m.get("published") and m.get("publish_date")]
     now = datetime.now(timezone.utc)
 
     if published:
-        latest = max(published, key=lambda m: m["date"])
-        latest_date = datetime.fromisoformat(latest["date"]).replace(tzinfo=timezone.utc)
+        # 生成日ではなく、実際に公開された日を基準に最新を判定する
+        latest = max(published, key=lambda m: m["publish_date"])
+        latest_date = datetime.fromisoformat(latest["publish_date"]).replace(tzinfo=timezone.utc)
         days_since = (now - latest_date).days
-        heartbeat["last_published_date"] = latest["date"]
+        heartbeat["last_published_date"] = latest["publish_date"]
     else:
         # プロジェクト開始直後などpublished実績が一度もない場合は未達成扱い
         days_since = FRESHNESS_DAYS + 1
