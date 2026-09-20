@@ -98,14 +98,17 @@ def generate_and_download_one(index: int) -> Path | None:
         print(f"[{index:03d}] could not parse generate.py output: {e}\nraw: {proc.stdout}", flush=True)
         return None
 
+    print(f"[{index:03d}] share_url: {share_url}", flush=True)
     print(f"[{index:03d}] waiting {GENERATION_WAIT_SECONDS}s for generation to finish...", flush=True)
     time.sleep(GENERATION_WAIT_SECONDS)
 
     try:
         resp = requests.get(share_url, timeout=30, headers=HEADERS)
+        print(f"[{index:03d}] share page status: {resp.status_code}, length: {len(resp.text)} chars", flush=True)
         mp3_urls = re.findall(r'https?://[^\s"\'\\]+\.mp3[^\s"\'\\]*', resp.text)
         if not mp3_urls:
             print(f"[{index:03d}] no mp3 URL found on share page", flush=True)
+            print(f"[{index:03d}] share page preview (first 1000 chars):\n{resp.text[:1000]}", flush=True)
             return None
 
         audio_resp = requests.get(mp3_urls[0], timeout=60, headers=HEADERS)
