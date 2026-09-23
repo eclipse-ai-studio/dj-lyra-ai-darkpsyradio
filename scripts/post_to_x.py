@@ -7,6 +7,10 @@ Used for:
   - Weekly publish announcement (called from publish.yml after a successful publish)
   - Final death-mode announcement (called from death-check.yml, once only)
 
+All posts are marked with X's native "Made with AI" disclosure label
+(made_with_ai: true), since DJ Lyra Ai's posts are written and sent
+autonomously by the pipeline.
+
 Requires env vars: X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
 
 Usage:
@@ -55,7 +59,7 @@ def main():
     response = requests.post(
         X_POST_URL,
         auth=auth,
-        json={"text": message},
+        json={"text": message, "made_with_ai": True},
         timeout=30,
     )
 
