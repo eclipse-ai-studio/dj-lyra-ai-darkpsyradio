@@ -1,0 +1,15 @@
+{
+ "my_user_id": null,
+ "auto_posts": {},
+ "recent_notices": [],
+ "last_mention_id": null,
+ "mentions_start_time": null,
+ "last_own_tweet_id": null,
+ "replied_comment_ids": {},
+ "reply_counts": {},
+ "reply_count_dates": {},
+ "daily": {
+  "date": null,
+  "count": 0
+ }
+}
