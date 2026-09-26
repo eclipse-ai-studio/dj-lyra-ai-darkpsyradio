@@ -1,15 +1,33 @@
 {
- "my_user_id": null,
- "auto_posts": {},
+ "my_user_id": "2069810033890828288",
+ "auto_posts": {
+  "2103563256598086016": {
+   "kind": "weekly",
+   "date": "2026-09-25",
+   "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VTMZF\n#DarkpsyRadio #AIDJ #Darkpsy",
+   "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
+  }
+ },
  "recent_notices": [],
- "last_mention_id": null,
- "mentions_start_time": null,
- "last_own_tweet_id": null,
- "replied_comment_ids": {},
+ "last_mention_id": "2102979077762388186",
+ "mentions_start_time": "2026-09-26T12:03:49Z",
+ "last_own_tweet_id": "2103622888540754277",
+ "replied_comment_ids": {
+  "2103605644427501630": "2026-09-26",
+  "2103101673711562962": "2026-09-26",
+  "2102855520298455462": "2026-09-26",
+  "2102754062756434153": "2026-09-26",
+  "2102635729369333862": "2026-09-26",
+  "2102394523246805084": "2026-09-26",
+  "2102219881592791067": "2026-09-26",
+  "2102165376268402822": "2026-09-26",
+  "2101855837077799331": "2026-09-26",
+  "2101810899787075842": "2026-09-26"
+ },
  "reply_counts": {},
  "reply_count_dates": {},
  "daily": {
-  "date": null,
+  "date": "2026-09-26",
   "count": 0
  }
 }
