@@ -1,0 +1,56 @@
+name: Lyra Replies
+on:
+  workflow_dispatch:  # manual runs for testing
+  schedule:
+    - cron: "17 * * * *"  # every hour at :17
+concurrency:
+  group: lyra-bot  # one Lyra job at a time, so the state file never conflicts
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests requests_oauthlib
+
+      - name: Reply to new comments
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/lyra_replies.py
+
+      - name: Save the bot's state file back to the repo
+        run: |
+          git config user.name "dj-lyra-ai-bot"
+          git config user.email "actions@github.com"
+          git add data/lyra_state.json
+          git diff --staged --quiet && exit 0
+          git commit -m "Lyra bot: update state (replies)"
+          for i in 1 2 3; do
+            git pull --rebase && git push && exit 0
+            sleep 5
+          done
+          exit 1
+
+      - name: Email Dai if something crashed
+        if: failure()
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          [ -f lyra_notified.flag ] && exit 0  # already emailed with details
+          cd scripts && python -c "import lyra_common as c; c.send_email('【DJ Lyra Ai】Lyra Repliesが途中で止まりました', 'GitHub Actionsの Lyra Replies が予期しないエラーで止まりました。実行ログを確認してください。')"
