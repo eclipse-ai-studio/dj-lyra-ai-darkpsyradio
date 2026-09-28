@@ -13,6 +13,7 @@ Usage:
     python scripts/lyra_evening.py            # post for real
     python scripts/lyra_evening.py --dry-run  # print only (still calls Claude)
 """
+import difflib
 import random
 import re
 import sys
@@ -23,6 +24,8 @@ import lyra_persona as p
 FIXED_CHANCE = 0.10
 MAX_ATTEMPTS = 3
 MAX_NOTICE_LEN = 60  # characters; target is ~30
+
+SIMILAR_LIMIT = 0.8  # 80% or more alike = treated as a copy
 
 BANNED = ["わかりません", "分かりません", "わからない", "分からない", "何も起きていません", "#", "http"]
 
@@ -41,8 +44,12 @@ def is_usable(text: str, recent: list[str]) -> str | None:
     for b in BANNED:
         if b in text:
             return f"contains banned phrase: {b}"
-    if text in recent:
-        return "same as a recent post"
+    for old in p.EVENING_EXAMPLES:
+        if difflib.SequenceMatcher(None, text, old).ratio() >= SIMILAR_LIMIT:
+            return f"too close to an example: {old}"
+    for old in recent:
+        if difflib.SequenceMatcher(None, text, old).ratio() >= SIMILAR_LIMIT:
+            return f"too close to a recent post: {old}"
     return None
 
 
