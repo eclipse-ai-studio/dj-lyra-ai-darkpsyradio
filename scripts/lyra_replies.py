@@ -92,9 +92,15 @@ def check_missed_posts(state: dict):
     today = c.today_jst()
     notified = state.setdefault("missed_notified", {})
     for kind, (h, m) in MISSED_CHECK_AFTER.items():
-        if (now.hour, now.minute) < (h, m) or notified.get(kind) == today:
+        if (now.hour, now.minute) < (h, m):
             continue
-        if c.already_posted(state, kind, today):
+        cl = c.todays_claim(state, kind)
+        if cl and cl.get("status") == "posting":
+            # a run stopped mid-post and no later run noticed: ask Dai to check X
+            c.report_stuck_claim(state, kind)
+            c.push_state(f"Lyra bot: {kind} stuck notice sent")
+            continue
+        if notified.get(kind) == today or c.already_posted(state, kind, today):
             continue
         label = "朝" if kind == "morning" else "夕方"
         window = "6:55〜8:55" if kind == "morning" else "14:55〜16:55"
@@ -185,7 +191,15 @@ def main():
                 thread_parent = parent.get("text") if parent_id != conv else None
                 text = write_reply(post, thread_parent, m.get("text", ""))
 
-            new_id = c.x_post(text, reply_to=mid)
+            try:
+                new_id = c.x_post(text, reply_to=mid)
+            except c.XPostUncertain as e:
+                # may have gone out: count it as answered so it's never replied to twice
+                state["reply_counts"].setdefault(conv, {})[who] = nth
+                state["reply_count_dates"][conv] = today
+                state["replied_comment_ids"][mid] = today
+                state["daily"]["count"] += 1
+                raise RuntimeError(str(e))
             # record only after the reply really went out
             state["reply_counts"].setdefault(conv, {})[who] = nth
             state["reply_count_dates"][conv] = today
@@ -213,13 +227,14 @@ def main():
     print(f"Done: {replied} replies, today total {state['daily']['count']}/{c.DAILY_REPLY_LIMIT}")
 
     if errors:
-        c.send_email(
+        c.notify_once(
+            state, "replies_errors",
             "【DJ Lyra Ai】リプライ返信でエラーがありました",
-            "30分ごとのリプライ返信で、次のエラーがありました。\n\n" + "\n".join(errors) +
+            "30分ごとのリプライ返信で、次のエラーがありました（このメールは1日1回まで）。\n\n" + "\n".join(errors) +
             ("\n\nAPIのエラーで止まった分は、次の回（30分後）に自動的にやり直します。" if stop_at else "") +
             "\n\n続くようなら、GitHub Actionsのログと、X API・Claude APIの残高を確認してください。",
         )
 
 
 if __name__ == "__main__":
-    main()
+    c.run_main(main, "Lyra Replies")

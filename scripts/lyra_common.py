@@ -77,6 +77,7 @@ def default_state() -> dict:
         "daily": {"date": None, "count": 0},
         "claims": {},              # "morning"/"evening" -> {date, status, at} (see begin_post)
         "missed_notified": {},     # "morning"/"evening" -> date Dai was told the post never went out
+        "errors_notified": {},     # problem key -> date Dai was last emailed about it (once a day)
     }
 
 
@@ -144,8 +145,9 @@ def push_state(message: str) -> bool:
         if not _git("commit", "-m", message):
             return False
     for _ in range(3):
-        if _git("pull", "--rebase") and _git("push"):
+        if _git("pull", "--rebase", "--autostash") and _git("push"):
             return True
+        _git("rebase", "--abort")  # never leave a half-done rebase behind
     return False
 
 
@@ -242,14 +244,25 @@ def _x_auth():
     return OAuth1(keys[0], client_secret=keys[1], resource_owner_key=keys[2], resource_owner_secret=keys[3])
 
 
+class XPostUncertain(Exception):
+    """The post request was sent but no answer came back (timeout / dropped
+    connection). It MAY have been posted, so it must not be retried blindly."""
+
+
 def x_post(text: str, reply_to: str | None = None) -> str:
-    """Post (or reply) with the Made with AI label. Returns the new tweet id."""
+    """Post (or reply) with the Made with AI label. Returns the new tweet id.
+    Raises XPostUncertain if we can't tell whether it went out."""
     if x_len(text) > X_LIMIT:
         raise ValueError(f"text too long for X ({x_len(text)}/{X_LIMIT}): {text}")
     body = {"text": text, "made_with_ai": True}
     if reply_to:
         body["reply"] = {"in_reply_to_tweet_id": str(reply_to)}
-    r = requests.post(f"{X_API}/tweets", auth=_x_auth(), json=body, timeout=30)
+    try:
+        r = requests.post(f"{X_API}/tweets", auth=_x_auth(), json=body, timeout=30)
+    except requests.exceptions.ConnectTimeout as e:
+        raise RuntimeError(f"X post failed (could not connect): {e}")  # never reached X
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise XPostUncertain(f"no answer from X, the post may or may not be out: {e}")
     if r.status_code not in (200, 201):
         raise RuntimeError(f"X post failed: {r.status_code} {r.text}")
     return r.json()["data"]["id"]
@@ -288,6 +301,38 @@ def claude_write(system: str, user: str, max_tokens: int = 300) -> str:
         raise RuntimeError(f"Claude API failed: {r.status_code} {r.text}")
     parts = [b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text"]
     return "".join(parts).strip()
+
+
+# ---------------------------------------------------------------- once-a-day emails
+def notify_once(state: dict, key: str, subject: str, body: str):
+    """Email Dai about a problem at most once per Japan-time day per key,
+    so a problem that repeats every run doesn't flood the inbox."""
+    Path("lyra_notified.flag").touch()  # the workflow's crash step stays quiet either way
+    sent = state.setdefault("errors_notified", {})
+    if sent.get(key) == today_jst():
+        print(f"(already emailed today about: {subject})")
+        return
+    send_email(subject, body)
+    sent[key] = today_jst()
+    save_state(state)
+    push_state(f"Lyra bot: notified {key}")
+
+
+def run_main(main, job: str):
+    """Run a script's main(). If it crashes, email Dai (once a day) and
+    still fail the GitHub run so it shows up red in Actions."""
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        notify_once(
+            load_state(), f"{job}_crash",
+            f"【DJ Lyra Ai】{job} でエラーが起きました",
+            f"GitHub Actionsの {job} がエラーで止まりました（同じエラーのメールは1日1回まで）。\n\n"
+            f"エラー: {e}\n\n次の回で自動的にやり直します。続くようなら実行ログを確認してください。",
+        )
+        raise
 
 
 # ---------------------------------------------------------------- Gmail

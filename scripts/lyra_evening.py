@@ -105,6 +105,12 @@ def main():
         return
     try:
         tweet_id = c.x_post(post)
+    except c.XPostUncertain as e:
+        # X didn't answer: it may be posted. Keep the "posting" flag so nothing
+        # retries (no double post); Dai gets one "please check X" email.
+        print(f"[post] {e}")
+        c.report_stuck_claim(c.load_state(), "evening")
+        return
     except Exception as e:
         # no email here: the next run (10 minutes later) tries again.
         # If nothing has gone out by the end of the window, lyra_replies.py emails Dai.
@@ -127,4 +133,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    c.run_main(main, "Lyra Evening Post")
