@@ -6,6 +6,10 @@ on:
         description: "Test only: print the post, don't send it"
         type: boolean
         default: true
+      force:
+        description: "Force: post even if today's post is flagged (only when the email says so)"
+        type: boolean
+        default: false
   schedule:
     # Every 10 min from 06:55 to 08:55 JST (13 tries). GitHub sometimes skips
     # scheduled runs; the first one that actually runs posts, the rest do nothing.
@@ -40,7 +44,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-        run: python scripts/lyra_morning.py ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: python scripts/lyra_morning.py ${{ inputs.dry_run && '--dry-run' || '' }} ${{ inputs.force && '--force' || '' }}
 
       - name: Save the bot's state file back to the repo
         run: |
