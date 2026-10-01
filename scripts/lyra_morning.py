@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DJ Lyra Ai - Morning post (08:00 JST, "宇宙天気予報")
+DJ Lyra Ai - Morning post (around 07:00 JST, "宇宙天気予報")
 ======================================================
 Builds the morning post without Claude:
 
@@ -19,8 +19,9 @@ Builds the morning post without Claude:
 - If the flare forecast can't be read: post without it
   (eclipse + encouragement, or encouragement only) and email Dai.
 - Does nothing in death mode.
-- Runs twice (08:07 and backup 08:37 JST). If today's post is already
-  out, the second run does nothing, so it never posts twice.
+- Tried every 10 minutes from 06:55 to 08:55 JST (GitHub sometimes skips
+  scheduled runs). The first run that happens posts; once today's post is
+  out, later runs do nothing, so it never posts twice.
 
 Usage:
     python scripts/lyra_morning.py            # post for real
@@ -84,9 +85,13 @@ def main():
         return
 
     date = c.today_jst()
-    if not dry and c.already_posted(c.load_state(), "morning", date):
-        print("Today's morning post is already out. Nothing to do (backup run).")
-        return
+    force = "--force" in sys.argv
+    if not dry and not force:
+        st = c.load_state()
+        if c.already_posted(st, "morning", c.today_jst()):
+            c.report_stuck_claim(st, "morning")
+            print("Today's morning post is already out (or being posted). Nothing to do.")
+            return
     texts = c.load_texts()
     eclipse = c.load_eclipses().get(date)
     encouragement = random.choice(texts["morning_encouragement"])
@@ -106,15 +111,17 @@ def main():
         return
 
     state = c.load_state()
+    if not c.begin_post(state, "morning"):
+        print("Could not save the posting flag to GitHub. Not posting; the next run will try again.")
+        return
     try:
         tweet_id = c.x_post(post)
     except Exception as e:
-        c.send_email(
-            "【DJ Lyra Ai】朝の投稿ができませんでした",
-            f"朝8時の投稿に失敗しました。\n\nエラー: {e}\n\n投稿しようとした文:\n{post}\n\n"
-            "GitHub Actionsのログを確認して、必要なら Lyra Morning Post を手動で再実行してください。",
-        )
-        raise
+        # no email here: the next run (10 minutes later) tries again.
+        # If nothing has gone out by the end of the window, lyra_replies.py emails Dai.
+        c.finish_post(state, "morning", ok=False)
+        print(f"[post] failed, the next run will try again: {e}")
+        return
 
     context = []
     if flare:
@@ -122,7 +129,7 @@ def main():
     if eclipse:
         context.append(f"今日の{eclipse['type']}: 見える地域 {eclipse['regions']}、最大になる時刻（日本時間）{eclipse['greatest_jst']}")
     state["auto_posts"][tweet_id] = {"kind": "morning", "date": date, "text": post, "context": "\n".join(context)}
-    c.save_state(state)
+    c.finish_post(state, "morning", ok=True)
     print(f"[post] OK id={tweet_id}")
 
     if flare_error:

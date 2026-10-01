@@ -19,6 +19,7 @@ import hmac
 import json
 import os
 import smtplib
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
@@ -74,6 +75,8 @@ def default_state() -> dict:
         "reply_counts": {},        # conversation_id -> {user_hash: count}
         "reply_count_dates": {},   # conversation_id -> date (for pruning)
         "daily": {"date": None, "count": 0},
+        "claims": {},              # "morning"/"evening" -> {date, status, at} (see begin_post)
+        "missed_notified": {},     # "morning"/"evening" -> date Dai was told the post never went out
     }
 
 
@@ -96,6 +99,7 @@ def prune_state(state: dict):
     state["reply_counts"] = {k: v for k, v in state["reply_counts"].items() if k in keep_convs}
     state["reply_count_dates"] = {k: d for k, d in state["reply_count_dates"].items() if k in keep_convs}
     state["recent_notices"] = state["recent_notices"][-RECENT_NOTICES_MAX:]
+    state["claims"] = {k: v for k, v in state.get("claims", {}).items() if v.get("date", "") >= cutoff}
 
 
 def save_state(state: dict):
@@ -104,9 +108,100 @@ def save_state(state: dict):
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=1))
 
 
+# ---------------------------------------------------------------- posting flag
+# The morning/evening post is tried many times a day (GitHub sometimes skips
+# scheduled runs). To make sure it goes out only once, each run first saves a
+# flag ("claim") to the repo BEFORE posting:
+#   no flag today          -> save flag "posting" to GitHub, then post
+#   flag "posting"         -> another run is/was posting: do nothing
+#                             (if it never finished, Dai gets one email)
+#   flag "done"            -> already posted today: do nothing
+# If saving the flag fails, this run does not post (the next run retries).
+# If posting fails, the flag is removed so the next run retries.
+
+def todays_claim(state: dict, kind: str) -> dict | None:
+    cl = state.get("claims", {}).get(kind)
+    return cl if cl and cl.get("date") == today_jst() else None
+
+
 def already_posted(state: dict, kind: str, date: str) -> bool:
-    """True if today's morning/evening post is already out (backup runs then do nothing)."""
-    return any(v.get("kind") == kind and v.get("date") == date for v in state["auto_posts"].values())
+    """True if today's morning/evening post is already out or being posted."""
+    if any(v.get("kind") == kind and v.get("date") == date for v in state["auto_posts"].values()):
+        return True
+    return todays_claim(state, kind) is not None
+
+
+def _git(*args) -> bool:
+    return subprocess.run(["git", *args], capture_output=True, text=True).returncode == 0
+
+
+def push_state(message: str) -> bool:
+    """Commit data/lyra_state.json and push it to GitHub. True if it got there."""
+    _git("config", "user.name", "dj-lyra-ai-bot")
+    _git("config", "user.email", "actions@github.com")
+    _git("add", str(STATE_PATH))
+    if not _git("diff", "--staged", "--quiet"):
+        if not _git("commit", "-m", message):
+            return False
+    for _ in range(3):
+        if _git("pull", "--rebase") and _git("push"):
+            return True
+    return False
+
+
+def begin_post(state: dict, kind: str) -> bool:
+    """Save the 'posting' flag to GitHub before posting. False = don't post."""
+    state.setdefault("claims", {})[kind] = {"date": today_jst(), "status": "posting", "at": now_jst().isoformat(timespec="seconds")}
+    save_state(state)
+    if push_state(f"Lyra bot: start {kind} post"):
+        return True
+    # couldn't save the flag: undo it locally and let the next run try again
+    state["claims"].pop(kind, None)
+    save_state(state)
+    return False
+
+
+def finish_post(state: dict, kind: str, ok: bool):
+    """Mark the flag done (posted) or remove it (failed, so the next run retries)."""
+    if ok:
+        state["claims"][kind]["status"] = "done"
+    else:
+        state["claims"].pop(kind, None)
+    save_state(state)
+    push_state(f"Lyra bot: {kind} post {'done' if ok else 'failed'}")
+
+
+def workflow_url(kind: str) -> str:
+    """Link to the morning/evening workflow page (works in a phone browser)."""
+    repo = os.environ.get("GITHUB_REPOSITORY", "eclipse-ai-studio/dj-lyra-ai-darkpsyradio")
+    return f"https://github.com/{repo}/actions/workflows/lyra-{kind}.yml"
+
+
+MANUAL_STEPS = (
+    "\n\n【スマホからの手順】\n"
+    "1. 下のリンクを開く\n{url}\n"
+    "2.「Run workflow」をタップ\n"
+    "3.「Test only」のチェックを外す{force}\n"
+    "4. 緑の「Run workflow」をタップ"
+)
+
+
+def report_stuck_claim(state: dict, kind: str) -> None:
+    """A run started posting but never finished. Don't risk a double post;
+    tell Dai once so he can check X by hand."""
+    cl = todays_claim(state, kind)
+    if not cl or cl.get("status") != "posting":
+        return
+    label = "朝" if kind == "morning" else "夕方"
+    send_email(
+        f"【DJ Lyra Ai】{label}の投稿が途中で止まったようです（要確認）",
+        f"今日の{label}の投稿は、投稿の途中で処理が止まった記録があります（{cl.get('at')}開始）。\n"
+        "二重投稿を避けるため、今日はこれ以上自動では投稿しません。\n\n"
+        f"Xを見て、今日の{label}の投稿が出ていなければ、手動で実行してください。"
+        + MANUAL_STEPS.format(url=workflow_url(kind), force="、「Force」にチェックを入れる"),
+    )
+    cl["status"] = "stuck_notified"
+    save_state(state)
 
 
 def user_hash(author_id: str) -> str:

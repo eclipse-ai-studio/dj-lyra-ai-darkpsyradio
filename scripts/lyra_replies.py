@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DJ Lyra Ai - Reply to comments (every hour)
+DJ Lyra Ai - Reply to comments (every 30 minutes)
 =============================================
 Replies only to comments on DJ Lyra Ai's automatic posts
 (morning / evening / weekly mix announcement), and to follow-up comments
@@ -82,12 +82,43 @@ def write_reply(post: dict, thread_parent: str | None, comment: str) -> str:
     raise ValueError(f"reply unusable: {text!r}")
 
 
+# After each posting window has ended, tell Dai once if that day's post never went out
+# (every try failed, or GitHub skipped all of them).
+MISSED_CHECK_AFTER = {"morning": (9, 10), "evening": (17, 10)}  # Japan time
+
+
+def check_missed_posts(state: dict):
+    now = c.now_jst()
+    today = c.today_jst()
+    notified = state.setdefault("missed_notified", {})
+    for kind, (h, m) in MISSED_CHECK_AFTER.items():
+        if (now.hour, now.minute) < (h, m) or notified.get(kind) == today:
+            continue
+        if c.already_posted(state, kind, today):
+            continue
+        label = "朝" if kind == "morning" else "夕方"
+        window = "6:55〜8:55" if kind == "morning" else "14:55〜16:55"
+        c.send_email(
+            f"【DJ Lyra Ai】今日の{label}の投稿が出ていません",
+            f"今日の{label}の投稿は、{window}のあいだに一度も成功しませんでした"
+            "（投稿の失敗が続いたか、GitHubが実行を飛ばした可能性があります）。\n\n"
+            "必要なら、手動で実行してください。"
+            + c.MANUAL_STEPS.format(url=c.workflow_url(kind), force=""),
+        )
+        notified[kind] = today
+        # save right away: if X is down, the rest of this run may crash before
+        # the normal save, and Dai would get this email again every 30 minutes
+        c.save_state(state)
+        c.push_state(f"Lyra bot: {kind} missed notice sent")
+
+
 def main():
     if c.is_dead():
         print("Death mode is active. Skipping replies.")
         return
 
     state = c.load_state()
+    check_missed_posts(state)
     me = c.my_user_id(state)
     first_run = state.get("last_mention_id") is None
 
@@ -166,7 +197,7 @@ def main():
             # this one comment couldn't get a usable reply: skip it, keep going
             errors.append(f"コメント {mid}: {e}")
         except Exception as e:
-            # API trouble: stop here and retry this comment next hour
+            # API trouble: stop here and retry this comment next run
             errors.append(f"コメント {mid}: {e}")
             stop_at = mid
             break
@@ -184,8 +215,8 @@ def main():
     if errors:
         c.send_email(
             "【DJ Lyra Ai】リプライ返信でエラーがありました",
-            "1時間ごとのリプライ返信で、次のエラーがありました。\n\n" + "\n".join(errors) +
-            ("\n\nAPIのエラーで止まった分は、次の1時間で自動的にやり直します。" if stop_at else "") +
+            "30分ごとのリプライ返信で、次のエラーがありました。\n\n" + "\n".join(errors) +
+            ("\n\nAPIのエラーで止まった分は、次の回（30分後）に自動的にやり直します。" if stop_at else "") +
             "\n\n続くようなら、GitHub Actionsのログと、X API・Claude APIの残高を確認してください。",
         )
 

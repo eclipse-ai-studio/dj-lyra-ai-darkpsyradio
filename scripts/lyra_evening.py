@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DJ Lyra Ai - Evening post (17:00 JST)
+DJ Lyra Ai - Evening post (around 15:00 JST)
 =======================================
 - 10%: one random fixed food/animal line (data/lyra_texts.json)
 - 90%: Claude writes a short "ふとした気づき" (small everyday notice),
@@ -8,8 +8,9 @@ DJ Lyra Ai - Evening post (17:00 JST)
 - If Claude fails or keeps writing something unusable, falls back to a
   fixed line so the post still goes out, and emails Dai.
 - Does nothing in death mode.
-- Runs twice (17:07 and backup 17:37 JST). If today's post is already
-  out, the second run does nothing, so it never posts twice.
+- Tried every 10 minutes from 14:55 to 16:55 JST (GitHub sometimes skips
+  scheduled runs). The first run that happens posts; once today's post is
+  out, later runs do nothing, so it never posts twice.
 
 Usage:
     python scripts/lyra_evening.py            # post for real
@@ -73,9 +74,13 @@ def main():
         print("Death mode is active. Skipping evening post.")
         return
 
-    if not dry and c.already_posted(c.load_state(), "evening", c.today_jst()):
-        print("Today's evening post is already out. Nothing to do (backup run).")
-        return
+    force = "--force" in sys.argv
+    if not dry and not force:
+        st = c.load_state()
+        if c.already_posted(st, "evening", c.today_jst()):
+            c.report_stuck_claim(st, "evening")
+            print("Today's evening post is already out (or being posted). Nothing to do.")
+            return
     texts = c.load_texts()
     fixed_pool = texts["evening_food"] + texts["evening_animal"]
     state = c.load_state()
@@ -95,20 +100,22 @@ def main():
     if dry:
         return
 
+    if not c.begin_post(state, "evening"):
+        print("Could not save the posting flag to GitHub. Not posting; the next run will try again.")
+        return
     try:
         tweet_id = c.x_post(post)
     except Exception as e:
-        c.send_email(
-            "【DJ Lyra Ai】夕方の投稿ができませんでした",
-            f"夕方17時の投稿に失敗しました。\n\nエラー: {e}\n\n投稿しようとした文:\n{post}\n\n"
-            "GitHub Actionsのログを確認して、必要なら Lyra Evening Post を手動で再実行してください。",
-        )
-        raise
+        # no email here: the next run (10 minutes later) tries again.
+        # If nothing has gone out by the end of the window, lyra_replies.py emails Dai.
+        c.finish_post(state, "evening", ok=False)
+        print(f"[post] failed, the next run will try again: {e}")
+        return
 
     state["auto_posts"][tweet_id] = {"kind": "evening", "date": c.today_jst(), "text": post, "context": ""}
     if kind == "notice":
         state["recent_notices"].append(post)
-    c.save_state(state)
+    c.finish_post(state, "evening", ok=True)
     print(f"[post] OK id={tweet_id}")
 
     if problem:
