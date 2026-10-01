@@ -19,6 +19,8 @@ Builds the morning post without Claude:
 - If the flare forecast can't be read: post without it
   (eclipse + encouragement, or encouragement only) and email Dai.
 - Does nothing in death mode.
+- Runs twice (08:07 and backup 08:37 JST). If today's post is already
+  out, the second run does nothing, so it never posts twice.
 
 Usage:
     python scripts/lyra_morning.py            # post for real
@@ -82,6 +84,9 @@ def main():
         return
 
     date = c.today_jst()
+    if not dry and c.already_posted(c.load_state(), "morning", date):
+        print("Today's morning post is already out. Nothing to do (backup run).")
+        return
     texts = c.load_texts()
     eclipse = c.load_eclipses().get(date)
     encouragement = random.choice(texts["morning_encouragement"])

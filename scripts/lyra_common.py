@@ -104,6 +104,11 @@ def save_state(state: dict):
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=1))
 
 
+def already_posted(state: dict, kind: str, date: str) -> bool:
+    """True if today's morning/evening post is already out (backup runs then do nothing)."""
+    return any(v.get("kind") == kind and v.get("date") == date for v in state["auto_posts"].values())
+
+
 def user_hash(author_id: str) -> str:
     """Store commenters only as an irreversible hash (the repo is public)."""
     secret = os.environ.get("X_API_SECRET", "lyra").encode()

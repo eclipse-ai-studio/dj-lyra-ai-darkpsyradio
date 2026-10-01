@@ -8,6 +8,8 @@ DJ Lyra Ai - Evening post (17:00 JST)
 - If Claude fails or keeps writing something unusable, falls back to a
   fixed line so the post still goes out, and emails Dai.
 - Does nothing in death mode.
+- Runs twice (17:07 and backup 17:37 JST). If today's post is already
+  out, the second run does nothing, so it never posts twice.
 
 Usage:
     python scripts/lyra_evening.py            # post for real
@@ -71,6 +73,9 @@ def main():
         print("Death mode is active. Skipping evening post.")
         return
 
+    if not dry and c.already_posted(c.load_state(), "evening", c.today_jst()):
+        print("Today's evening post is already out. Nothing to do (backup run).")
+        return
     texts = c.load_texts()
     fixed_pool = texts["evening_food"] + texts["evening_animal"]
     state = c.load_state()
