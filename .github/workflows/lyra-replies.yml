@@ -2,7 +2,7 @@ name: Lyra Replies
 on:
   workflow_dispatch:  # manual runs for testing
   schedule:
-    - cron: "17 * * * *"  # every hour at :17
+    - cron: "17,47 * * * *"  # every 30 minutes (:17 and :47)
 concurrency:
   group: lyra-bot  # one Lyra job at a time, so the state file never conflicts
   cancel-in-progress: false
