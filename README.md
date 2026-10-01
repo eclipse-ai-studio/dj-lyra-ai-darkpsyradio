@@ -7,7 +7,7 @@ Autonomous AI dark psytrance radio, weekly mixes, built to outlive its creator.
 ## How it works
 Every week, new tracks are generated and combined into a mix, then released automatically - no human DJ involved.
 
-Daily AI-generated space weather forecasts and everyday musings on X, with AI auto-replies.
+Daily generated space weather forecasts and everyday musings on X, with auto-replies.
 
 ## Listen
 🔗 https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/
