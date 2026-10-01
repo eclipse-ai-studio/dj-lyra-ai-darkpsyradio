@@ -7,8 +7,11 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: "7 23 * * *"   # 08:07 JST every day (23:07 UTC)
-    - cron: "37 23 * * *"  # 08:37 JST backup (does nothing if already posted)
+    # Every 10 min from 06:55 to 08:55 JST (13 tries). GitHub sometimes skips
+    # scheduled runs; the first one that actually runs posts, the rest do nothing.
+    - cron: "55 21 * * *"                   # 06:55 JST
+    - cron: "5,15,25,35,45,55 22 * * *"     # 07:05-07:55 JST
+    - cron: "5,15,25,35,45,55 23 * * *"     # 08:05-08:55 JST
 concurrency:
   group: lyra-bot  # one Lyra job at a time, so the state file never conflicts
   cancel-in-progress: false
