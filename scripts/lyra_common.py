@@ -16,11 +16,13 @@ This file does not touch the existing weekly-mix pipeline.
 """
 import hashlib
 import hmac
+import html
 import json
 import os
 import smtplib
 import subprocess
 import sys
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -57,8 +59,19 @@ def today_jst() -> str:
 def is_dead() -> bool:
     try:
         return bool(json.loads(HEARTBEAT_PATH.read_text())["death_mode"])
-    except Exception:
-        # If heartbeat can't be read, do NOT post (safer to stay quiet).
+    except Exception as e:
+        # If heartbeat can't be read, do NOT post (safer to stay quiet),
+        # but tell Dai once a day so the bot doesn't stop silently.
+        print(f"Could not read {HEARTBEAT_PATH}: {e}")
+        try:
+            notify_once(
+                load_state(), "heartbeat_unreadable",
+                "【DJ Lyra Ai】heartbeat.jsonが読めないため、botを止めています",
+                f"{HEARTBEAT_PATH} を読めなかったので、安全のため朝・夕方の投稿とリプライを止めています。\n\n"
+                f"エラー: {e}\n\nファイルが壊れていないか確認してください。直れば自動で再開します。",
+            )
+        except Exception as e2:
+            print(f"(could not send the heartbeat notice: {e2})")
         return True
 
 
@@ -84,10 +97,9 @@ def default_state() -> dict:
 def load_state() -> dict:
     state = default_state()
     if STATE_PATH.exists():
-        try:
-            state.update(json.loads(STATE_PATH.read_text()))
-        except Exception:
-            pass
+        # a broken file must NOT be silently replaced with an empty one
+        # (that would forget today's post and could post twice)
+        state.update(json.loads(STATE_PATH.read_text()))
     return state
 
 
@@ -113,12 +125,19 @@ def save_state(state: dict):
 # The morning/evening post is tried many times a day (GitHub sometimes skips
 # scheduled runs). To make sure it goes out only once, each run first saves a
 # flag ("claim") to the repo BEFORE posting:
-#   no flag today          -> save flag "posting" to GitHub, then post
-#   flag "posting"         -> another run is/was posting: do nothing
-#                             (if it never finished, Dai gets one email)
-#   flag "done"            -> already posted today: do nothing
+#   no flag today      -> get the newest state from GitHub, save flag "posting"
+#                         (with the text about to be posted), then post
+#   flag "done"        -> already posted today: do nothing
+#   flag "posting"     -> an earlier run sent the post but never heard back
+#                         (timeout, X error, run killed). The next run looks at
+#                         the bot's own posts on X today for that EXACT text:
+#                         found -> "done"; not found -> remove flag and post now;
+#                         X unreachable -> wait for the next run. Exact text of
+#                         the bot's own post only, so Dai's manual posts never
+#                         count. If it's still unknown after the window, Dai
+#                         gets one "please check X" email.
 # If saving the flag fails, this run does not post (the next run retries).
-# If posting fails, the flag is removed so the next run retries.
+# If X clearly refuses the post, the flag is removed so the next run retries.
 
 def todays_claim(state: dict, kind: str) -> dict | None:
     cl = state.get("claims", {}).get(kind)
@@ -136,6 +155,14 @@ def _git(*args) -> bool:
     return subprocess.run(["git", *args], capture_output=True, text=True).returncode == 0
 
 
+def sync_repo():
+    """Get the newest commits from GitHub. A run that waited in the queue was
+    checked out at an older commit and would not see what earlier runs saved."""
+    if not _git("pull", "--rebase", "--autostash"):
+        _git("rebase", "--abort")
+        print("(could not get the newest state from GitHub; using the checked-out one)")
+
+
 def push_state(message: str) -> bool:
     """Commit data/lyra_state.json and push it to GitHub. True if it got there."""
     _git("config", "user.name", "dj-lyra-ai-bot")
@@ -151,26 +178,71 @@ def push_state(message: str) -> bool:
     return False
 
 
-def begin_post(state: dict, kind: str) -> bool:
-    """Save the 'posting' flag to GitHub before posting. False = don't post."""
-    state.setdefault("claims", {})[kind] = {"date": today_jst(), "status": "posting", "at": now_jst().isoformat(timespec="seconds")}
+def _same_text(a: str, b: str) -> bool:
+    norm = lambda t: unicodedata.normalize("NFC", html.unescape(t or "")).strip()
+    return norm(a) == norm(b)
+
+
+def resolve_unfinished(state: dict, kind: str):
+    """If today's flag is stuck at "posting", check X for that exact post.
+    Changes the flag to "done" (found) or removes it (not found). Leaves it
+    as is if X can't be reached or the flag has no text to look for."""
+    cl = todays_claim(state, kind)
+    if not cl or cl.get("status") != "posting" or not (cl.get("post") or {}).get("text"):
+        return
+    try:
+        me = my_user_id(state)
+        midnight = now_jst().replace(hour=0, minute=0, second=0, microsecond=0)
+        res = x_get(f"/users/{me}/tweets", {
+            "start_time": midnight.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "max_results": 100,
+        })
+    except Exception as e:
+        print(f"[check] could not look at X to see if the {kind} post went out: {e}")
+        return
+    match = next((t for t in res.get("data", []) or [] if _same_text(t.get("text"), cl["post"]["text"])), None)
+    if match:
+        print(f"[check] the earlier {kind} post did go out (id={match['id']}). Marking it done.")
+        state["auto_posts"][match["id"]] = cl["post"]
+        cl["status"] = "done"
+    else:
+        print(f"[check] the earlier {kind} post is not on X. Removing the flag so it can be posted.")
+        state["claims"].pop(kind, None)
+    save_state(state)
+    push_state(f"Lyra bot: checked unfinished {kind} post")
+
+
+def begin_post(kind: str, record: dict, force: bool = False) -> dict | None:
+    """Get the newest state, re-check, then save the 'posting' flag (with the
+    post text) to GitHub. Returns the state to use, or None = don't post."""
+    sync_repo()
+    state = load_state()
+    if not force and already_posted(state, kind, today_jst()):
+        print(f"Today's {kind} post is already out (or being posted). Nothing to do.")
+        return None
+    state.setdefault("claims", {})[kind] = {
+        "date": today_jst(), "status": "posting",
+        "at": now_jst().isoformat(timespec="seconds"), "post": record,
+    }
     save_state(state)
     if push_state(f"Lyra bot: start {kind} post"):
-        return True
-    # couldn't save the flag: undo it locally and let the next run try again
-    state["claims"].pop(kind, None)
-    save_state(state)
-    return False
+        return state
+    # couldn't save the flag: throw the local flag away; the next run tries again
+    _git("reset", "--hard", "@{u}")
+    return None
 
 
-def finish_post(state: dict, kind: str, ok: bool):
-    """Mark the flag done (posted) or remove it (failed, so the next run retries)."""
-    if ok:
-        state["claims"][kind]["status"] = "done"
+def finish_post(state: dict, kind: str, tweet_id: str | None):
+    """tweet_id given = posted: mark done and remember the post.
+    None = X refused it: remove the flag so the next run retries."""
+    cl = state["claims"][kind]
+    if tweet_id:
+        state["auto_posts"][tweet_id] = cl["post"]
+        cl["status"] = "done"
     else:
         state["claims"].pop(kind, None)
     save_state(state)
-    push_state(f"Lyra bot: {kind} post {'done' if ok else 'failed'}")
+    push_state(f"Lyra bot: {kind} post {'done' if tweet_id else 'failed'}")
 
 
 def workflow_url(kind: str) -> str:
@@ -189,8 +261,8 @@ MANUAL_STEPS = (
 
 
 def report_stuck_claim(state: dict, kind: str) -> None:
-    """A run started posting but never finished. Don't risk a double post;
-    tell Dai once so he can check X by hand."""
+    """After the window: the post's result is still unknown (X couldn't be
+    checked). Don't risk a double post; tell Dai once to check X by hand."""
     cl = todays_claim(state, kind)
     if not cl or cl.get("status") != "posting":
         return
@@ -198,7 +270,7 @@ def report_stuck_claim(state: dict, kind: str) -> None:
     send_email(
         f"【DJ Lyra Ai】{label}の投稿が途中で止まったようです（要確認）",
         f"今日の{label}の投稿は、投稿の途中で処理が止まった記録があります（{cl.get('at')}開始）。\n"
-        "二重投稿を避けるため、今日はこれ以上自動では投稿しません。\n\n"
+        "Xに投稿が出たかどうかを確認できなかったため、二重投稿を避けて、今日はこれ以上自動では投稿しません。\n\n"
         f"Xを見て、今日の{label}の投稿が出ていなければ、手動で実行してください。"
         + MANUAL_STEPS.format(url=workflow_url(kind), force="、「Force」にチェックを入れる"),
     )
@@ -263,9 +335,15 @@ def x_post(text: str, reply_to: str | None = None) -> str:
         raise RuntimeError(f"X post failed (could not connect): {e}")  # never reached X
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
         raise XPostUncertain(f"no answer from X, the post may or may not be out: {e}")
+    if r.status_code >= 500:
+        # X had trouble; sometimes the post is created anyway
+        raise XPostUncertain(f"X answered {r.status_code}, the post may or may not be out: {r.text[:300]}")
     if r.status_code not in (200, 201):
         raise RuntimeError(f"X post failed: {r.status_code} {r.text}")
-    return r.json()["data"]["id"]
+    try:
+        return r.json()["data"]["id"]
+    except Exception:
+        raise XPostUncertain(f"X said OK but the answer was unreadable: {r.text[:300]}")
 
 
 def x_get(path: str, params: dict | None = None) -> dict:
@@ -307,7 +385,6 @@ def claude_write(system: str, user: str, max_tokens: int = 300) -> str:
 def notify_once(state: dict, key: str, subject: str, body: str):
     """Email Dai about a problem at most once per Japan-time day per key,
     so a problem that repeats every run doesn't flood the inbox."""
-    Path("lyra_notified.flag").touch()  # the workflow's crash step stays quiet either way
     sent = state.setdefault("errors_notified", {})
     if sent.get(key) == today_jst():
         print(f"(already emailed today about: {subject})")
@@ -326,8 +403,15 @@ def run_main(main, job: str):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        try:
+            st = load_state()
+        except Exception:
+            # the state file itself is broken, so "once a day" can't be recorded here;
+            # leave it to the workflow's crash step (it has its own once-a-day check)
+            raise
+        Path("lyra_notified.flag").touch()  # this crash is handled here; the workflow's crash step stays quiet
         notify_once(
-            load_state(), f"{job}_crash",
+            st, f"{job}_crash",
             f"【DJ Lyra Ai】{job} でエラーが起きました",
             f"GitHub Actionsの {job} がエラーで止まりました（同じエラーのメールは1日1回まで）。\n\n"
             f"エラー: {e}\n\n次の回で自動的にやり直します。続くようなら実行ログを確認してください。",
@@ -342,8 +426,6 @@ def send_email(subject: str, body: str):
     if not address or not app_password:
         print("GMAIL_ADDRESS / GMAIL_APP_PASSWORD not set; cannot send notification.")
         return
-    # tell the workflow's "crashed" step that Dai was already emailed
-    Path("lyra_notified.flag").touch()
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = address

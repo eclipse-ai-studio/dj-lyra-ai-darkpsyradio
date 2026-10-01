@@ -24,11 +24,13 @@ Usage:
 """
 import re
 import sys
+import time
 
 import lyra_common as c
 import lyra_persona as p
 
 WEEKLY_PREFIX = "📡 This week's transmission is live"
+TIME_BUDGET = 300  # seconds; the job is killed at 10 minutes, so stop well before
 TWEET_FIELDS = "author_id,conversation_id,referenced_tweets,created_at,lang"
 
 
@@ -96,10 +98,14 @@ def check_missed_posts(state: dict):
             continue
         cl = c.todays_claim(state, kind)
         if cl and cl.get("status") == "posting":
-            # a run stopped mid-post and no later run noticed: ask Dai to check X
-            c.report_stuck_claim(state, kind)
-            c.push_state(f"Lyra bot: {kind} stuck notice sent")
-            continue
+            # an earlier run never heard back from X: look on X for that post
+            c.resolve_unfinished(state, kind)
+            cl = c.todays_claim(state, kind)
+            if cl and cl.get("status") == "posting":
+                # still can't tell (X unreachable): ask Dai to check X by hand
+                c.report_stuck_claim(state, kind)
+                c.push_state(f"Lyra bot: {kind} stuck notice sent")
+                continue
         if notified.get(kind) == today or c.already_posted(state, kind, today):
             continue
         label = "朝" if kind == "morning" else "夕方"
@@ -123,6 +129,7 @@ def main():
         print("Death mode is active. Skipping replies.")
         return
 
+    c.sync_repo()
     state = c.load_state()
     check_missed_posts(state)
     me = c.my_user_id(state)
@@ -157,8 +164,13 @@ def main():
         return
 
     errors, replied, stop_at = [], 0, None
+    started = time.monotonic()
     for m in mentions:
         mid = m["id"]
+        if time.monotonic() - started > TIME_BUDGET:
+            stop_at = mid  # out of time: the rest are handled next run
+            print("Time budget used up; the remaining comments wait for the next run.")
+            break
         try:
             if m.get("author_id") == me:
                 continue
@@ -191,15 +203,10 @@ def main():
                 thread_parent = parent.get("text") if parent_id != conv else None
                 text = write_reply(post, thread_parent, m.get("text", ""))
 
-            try:
-                new_id = c.x_post(text, reply_to=mid)
-            except c.XPostUncertain as e:
-                # may have gone out: count it as answered so it's never replied to twice
-                state["reply_counts"].setdefault(conv, {})[who] = nth
-                state["reply_count_dates"][conv] = today
-                state["replied_comment_ids"][mid] = today
-                state["daily"]["count"] += 1
-                raise RuntimeError(str(e))
+            # If X doesn't answer clearly, this raises and the comment is tried
+            # again next run; a reply that did go out is found by scan_own_tweets
+            # first (it records the comment as answered), so no double reply.
+            new_id = c.x_post(text, reply_to=mid)
             # record only after the reply really went out
             state["reply_counts"].setdefault(conv, {})[who] = nth
             state["reply_count_dates"][conv] = today

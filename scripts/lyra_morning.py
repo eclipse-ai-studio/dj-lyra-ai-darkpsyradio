@@ -87,10 +87,11 @@ def main():
     date = c.today_jst()
     force = "--force" in sys.argv
     if not dry and not force:
+        c.sync_repo()
         st = c.load_state()
+        c.resolve_unfinished(st, "morning")  # an earlier run never heard back from X?
         if c.already_posted(st, "morning", c.today_jst()):
-            c.report_stuck_claim(st, "morning")
-            print("Today's morning post is already out (or being posted). Nothing to do.")
+            print("Today's morning post is already out (or being checked). Nothing to do.")
             return
     texts = c.load_texts()
     eclipse = c.load_eclipses().get(date)
@@ -102,7 +103,7 @@ def main():
         resp.raise_for_status()
         flare = parse_flare_forecast(resp.text, date)
     except Exception as e:
-        flare_error = str(e)
+        flare_error = f"{type(e).__name__}: {e}"  # some errors have an empty message
         print(f"[flare] could not read forecast: {e}")
 
     post = build_post(flare, eclipse, encouragement)
@@ -110,32 +111,31 @@ def main():
     if dry:
         return
 
-    state = c.load_state()
-    if not c.begin_post(state, "morning"):
-        print("Could not save the posting flag to GitHub. Not posting; the next run will try again.")
-        return
-    try:
-        tweet_id = c.x_post(post)
-    except c.XPostUncertain as e:
-        # X didn't answer: it may be posted. Keep the "posting" flag so nothing
-        # retries (no double post); Dai gets one "please check X" email.
-        print(f"[post] {e}")
-        c.report_stuck_claim(c.load_state(), "morning")
-        return
-    except Exception as e:
-        # no email here: the next run (10 minutes later) tries again.
-        # If nothing has gone out by the end of the window, lyra_replies.py emails Dai.
-        c.finish_post(state, "morning", ok=False)
-        print(f"[post] failed, the next run will try again: {e}")
-        return
-
     context = []
     if flare:
         context.append(f"今日の太陽フレア予報（NOAA）: R1-R2 {flare[0]}%、R3 {flare[1]}%")
     if eclipse:
         context.append(f"今日の{eclipse['type']}: 見える地域 {eclipse['regions']}、最大になる時刻（日本時間）{eclipse['greatest_jst']}")
-    state["auto_posts"][tweet_id] = {"kind": "morning", "date": date, "text": post, "context": "\n".join(context)}
-    c.finish_post(state, "morning", ok=True)
+    record = {"kind": "morning", "date": date, "text": post, "context": "\n".join(context)}
+
+    state = c.begin_post("morning", record, force)
+    if state is None:
+        return
+    try:
+        tweet_id = c.x_post(post)
+    except c.XPostUncertain as e:
+        # X didn't answer clearly: it may be posted. The "posting" flag stays;
+        # the next run checks X for this exact text before doing anything.
+        print(f"[post] {e}")
+        return
+    except Exception as e:
+        # no email here: the next run (10 minutes later) tries again.
+        # If nothing has gone out by the end of the window, lyra_replies.py emails Dai.
+        c.finish_post(state, "morning", None)
+        print(f"[post] failed, the next run will try again: {e}")
+        return
+
+    c.finish_post(state, "morning", tweet_id)
     print(f"[post] OK id={tweet_id}")
 
     if flare_error:

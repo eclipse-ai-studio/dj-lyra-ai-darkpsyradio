@@ -76,10 +76,11 @@ def main():
 
     force = "--force" in sys.argv
     if not dry and not force:
+        c.sync_repo()
         st = c.load_state()
+        c.resolve_unfinished(st, "evening")  # an earlier run never heard back from X?
         if c.already_posted(st, "evening", c.today_jst()):
-            c.report_stuck_claim(st, "evening")
-            print("Today's evening post is already out (or being posted). Nothing to do.")
+            print("Today's evening post is already out (or being checked). Nothing to do.")
             return
     texts = c.load_texts()
     fixed_pool = texts["evening_food"] + texts["evening_animal"]
@@ -93,35 +94,37 @@ def main():
         try:
             post, kind = write_notice(recent), "notice"
         except Exception as e:
-            problem = str(e)
+            problem = f"{type(e).__name__}: {e}"
             post, kind = random.choice(fixed_pool), "fixed (fallback)"
 
     print(f"[post] {kind} ({c.x_len(post)}/{c.X_LIMIT}): {post}")
     if dry:
         return
 
-    if not c.begin_post(state, "evening"):
-        print("Could not save the posting flag to GitHub. Not posting; the next run will try again.")
+    record = {"kind": "evening", "date": c.today_jst(), "text": post, "context": ""}
+    state = c.begin_post("evening", record, force)
+    if state is None:
         return
     try:
         tweet_id = c.x_post(post)
     except c.XPostUncertain as e:
-        # X didn't answer: it may be posted. Keep the "posting" flag so nothing
-        # retries (no double post); Dai gets one "please check X" email.
+        # X didn't answer clearly: it may be posted. The "posting" flag stays;
+        # the next run checks X for this exact text before doing anything.
+        if kind == "notice":
+            state["recent_notices"].append(post)  # keep it out of future notices either way
+            c.save_state(state)
         print(f"[post] {e}")
-        c.report_stuck_claim(c.load_state(), "evening")
         return
     except Exception as e:
         # no email here: the next run (10 minutes later) tries again.
         # If nothing has gone out by the end of the window, lyra_replies.py emails Dai.
-        c.finish_post(state, "evening", ok=False)
+        c.finish_post(state, "evening", None)
         print(f"[post] failed, the next run will try again: {e}")
         return
 
-    state["auto_posts"][tweet_id] = {"kind": "evening", "date": c.today_jst(), "text": post, "context": ""}
     if kind == "notice":
         state["recent_notices"].append(post)
-    c.finish_post(state, "evening", ok=True)
+    c.finish_post(state, "evening", tweet_id)
     print(f"[post] OK id={tweet_id}")
 
     if problem:
