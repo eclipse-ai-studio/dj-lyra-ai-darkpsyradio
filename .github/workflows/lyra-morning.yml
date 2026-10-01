@@ -7,7 +7,8 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: "0 23 * * *"  # 08:00 JST every day (23:00 UTC)
+    - cron: "7 23 * * *"   # 08:07 JST every day (23:07 UTC)
+    - cron: "37 23 * * *"  # 08:37 JST backup (does nothing if already posted)
 concurrency:
   group: lyra-bot  # one Lyra job at a time, so the state file never conflicts
   cancel-in-progress: false
