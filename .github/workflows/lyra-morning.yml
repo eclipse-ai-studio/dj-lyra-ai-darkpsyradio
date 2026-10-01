@@ -65,6 +65,22 @@ jobs:
         env:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          [ -f lyra_notified.flag ] && exit 0  # already emailed with details
-          cd scripts && python -c "import lyra_common as c; c.send_email('【DJ Lyra Ai】Lyra Morning Postが途中で止まりました', 'GitHub Actionsの Lyra Morning Post が予期しないエラーで止まりました。実行ログを確認してください。')"
+          [ -f lyra_notified.flag ] && exit 0  # the script already handled it (once-a-day email)
+          # at most one of these emails per Japan-time day: skip if this workflow already failed today
+          since=$(date -u -d "$(TZ=Asia/Tokyo date +%F) 00:00 +0900" +%Y-%m-%dT%H:%M:%SZ)
+          n=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow lyra-morning.yml --status failure --created ">=$since" --json databaseId --jq length 2>/dev/null || echo 0)
+          if [ "$n" != "0" ]; then echo "Already failed earlier today; not emailing again."; exit 0; fi
+          python3 - <<'PY'
+          import os, smtplib
+          from email.mime.text import MIMEText
+          a, pw = os.environ.get("GMAIL_ADDRESS"), os.environ.get("GMAIL_APP_PASSWORD")
+          if a and pw:
+              url = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+              m = MIMEText(f"GitHub Actionsの Lyra Morning Post が予期しないエラーで止まりました（このメールは1日1回まで）。\n\n実行ログ:\n{url}")
+              m["Subject"], m["From"], m["To"] = "【DJ Lyra Ai】Lyra Morning Postが途中で止まりました", a, a
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+                  s.login(a, pw)
+                  s.send_message(m)
+          PY
