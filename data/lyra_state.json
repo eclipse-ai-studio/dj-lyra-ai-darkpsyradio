@@ -1,12 +1,6 @@
 {
  "my_user_id": "2069810033890828288",
  "auto_posts": {
-  "2103563256598086016": {
-   "kind": "weekly",
-   "date": "2026-09-25",
-   "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VTMZF\n#DarkpsyRadio #AIDJ #Darkpsy",
-   "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
-  },
   "2103984674921914433": {
    "kind": "morning",
    "date": "2026-09-27",
@@ -135,8 +129,8 @@
   "2105900839525392615": "2026-10-02"
  },
  "daily": {
-  "date": "2026-10-02",
-  "count": 1
+  "date": "2026-10-03",
+  "count": 0
  },
  "claims": {
   "morning": {
