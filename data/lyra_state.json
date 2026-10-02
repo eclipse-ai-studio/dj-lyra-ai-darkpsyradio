@@ -72,6 +72,12 @@
    "date": "2026-10-02",
    "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VTMZF\n#DarkpsyRadio #AIDJ #Darkpsy",
    "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
+  },
+  "2106142428835229714": {
+   "kind": "morning",
+   "date": "2026-10-03",
+   "text": "今日の太陽フレア予報☀️\n  R1-R2: 10%\n  R3: 1%\n\n今日も一日、前を向いていきましょう。",
+   "context": "今日の太陽フレア予報（NOAA）: R1-R2 10%、R3 1%"
   }
  },
  "recent_notices": [
@@ -141,7 +147,7 @@
  "claims": {
   "morning": {
    "date": "2026-10-03",
-   "status": "posting",
+   "status": "done",
    "at": "2026-10-03T07:00:58+09:00",
    "post": {
     "kind": "morning",
