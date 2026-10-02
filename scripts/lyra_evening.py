@@ -8,8 +8,8 @@ DJ Lyra Ai - Evening post (around 15:00 JST)
 - If Claude fails or keeps writing something unusable, falls back to a
   fixed line so the post still goes out, and emails Dai.
 - Does nothing in death mode.
-- Tried every 10 minutes from 14:55 to 16:55 JST (GitHub sometimes skips
-  scheduled runs). The first run that happens posts; once today's post is
+- Started by cron-job.org at 15:00 / 15:30 / 16:00 JST (plus one GitHub
+  backup at 16:20). The first run that happens posts; once today's post is
   out, later runs do nothing, so it never posts twice.
 
 Usage:
@@ -75,6 +75,9 @@ def main():
         return
 
     force = "--force" in sys.argv
+    if not dry and c.too_late("evening"):
+        print("This backup run started too late in the day (GitHub's timer was late). Not posting.")
+        return
     if not dry and not force:
         c.sync_repo()
         st = c.load_state()

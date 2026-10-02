@@ -19,8 +19,8 @@ Builds the morning post without Claude:
 - If the flare forecast can't be read: post without it
   (eclipse + encouragement, or encouragement only) and email Dai.
 - Does nothing in death mode.
-- Tried every 10 minutes from 06:55 to 08:55 JST (GitHub sometimes skips
-  scheduled runs). The first run that happens posts; once today's post is
+- Started by cron-job.org at 07:00 / 07:30 / 08:00 JST (plus one GitHub
+  backup at 08:20). The first run that happens posts; once today's post is
   out, later runs do nothing, so it never posts twice.
 
 Usage:
@@ -86,6 +86,9 @@ def main():
 
     date = c.today_jst()
     force = "--force" in sys.argv
+    if not dry and c.too_late("morning"):
+        print("This backup run started too late in the day (GitHub's timer was late). Not posting.")
+        return
     if not dry and not force:
         c.sync_repo()
         st = c.load_state()

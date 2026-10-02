@@ -139,6 +139,21 @@ def save_state(state: dict):
 # If saving the flag fails, this run does not post (the next run retries).
 # If X clearly refuses the post, the flag is removed so the next run retries.
 
+# A run started by GitHub's own (unreliable, sometimes hours-late) timer
+# must not post a morning post in the afternoon. Runs started by cron-job.org
+# or by Dai's button are never blocked.
+# (A run that is hours late can even land in the middle of the night.)
+ALLOWED_HOURS = {"morning": (6, 9), "evening": (14, 17)}  # Japan time, start <= hour < end
+
+
+def too_late(kind: str) -> bool:
+    """True if this run was started by GitHub's timer outside the posting hours."""
+    if os.environ.get("GITHUB_EVENT_NAME") != "schedule":
+        return False
+    start, end = ALLOWED_HOURS[kind]
+    return not (start <= now_jst().hour < end)
+
+
 def todays_claim(state: dict, kind: str) -> dict | None:
     cl = state.get("claims", {}).get(kind)
     return cl if cl and cl.get("date") == today_jst() else None

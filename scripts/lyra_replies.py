@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DJ Lyra Ai - Reply to comments (every 30 minutes)
+DJ Lyra Ai - Reply to comments (every 30 minutes, started by cron-job.org)
 =============================================
 Replies only to comments on DJ Lyra Ai's automatic posts
 (morning / evening / weekly mix announcement), and to follow-up comments
@@ -109,11 +109,11 @@ def check_missed_posts(state: dict):
         if notified.get(kind) == today or c.already_posted(state, kind, today):
             continue
         label = "朝" if kind == "morning" else "夕方"
-        window = "6:55〜8:55" if kind == "morning" else "14:55〜16:55"
+        window = "7:00〜9:00" if kind == "morning" else "15:00〜17:00"
         c.send_email(
             f"【DJ Lyra Ai】今日の{label}の投稿が出ていません",
             f"今日の{label}の投稿は、{window}のあいだに一度も成功しませんでした"
-            "（投稿の失敗が続いたか、GitHubが実行を飛ばした可能性があります）。\n\n"
+            "（投稿の失敗が続いたか、cron-job.org／GitHubが実行を起動しなかった可能性があります）。\n\n"
             "必要なら、手動で実行してください。"
             + c.MANUAL_STEPS.format(url=c.workflow_url(kind), force=""),
         )
