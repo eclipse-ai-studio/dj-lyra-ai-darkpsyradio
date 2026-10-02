@@ -116,6 +116,8 @@
   "count": 0
  },
  "claims": {},
- "missed_notified": {},
+ "missed_notified": {
+  "morning": "2026-10-02"
+ },
  "errors_notified": {}
 }
