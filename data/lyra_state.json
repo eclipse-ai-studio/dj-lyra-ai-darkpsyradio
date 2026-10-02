@@ -115,7 +115,19 @@
   "date": "2026-10-02",
   "count": 0
  },
- "claims": {},
+ "claims": {
+  "morning": {
+   "date": "2026-10-02",
+   "status": "posting",
+   "at": "2026-10-02T09:39:26+09:00",
+   "post": {
+    "kind": "morning",
+    "date": "2026-10-02",
+    "text": "今日の太陽フレア予報☀️\n  R1-R2: 15%\n  R3: 1%\n\n昨日はよく眠れましたか。",
+    "context": "今日の太陽フレア予報（NOAA）: R1-R2 15%、R3 1%"
+   }
+  }
+ },
  "missed_notified": {
   "morning": "2026-10-02"
  },
