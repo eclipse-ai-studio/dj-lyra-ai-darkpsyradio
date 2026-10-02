@@ -11,11 +11,11 @@ on:
         type: boolean
         default: false
   schedule:
-    # Every 10 min from 14:55 to 16:55 JST (13 tries). GitHub sometimes skips
-    # scheduled runs; the first one that actually runs posts, the rest do nothing.
-    - cron: "55 5 * * *"                    # 14:55 JST
-    - cron: "5,15,25,35,45,55 6 * * *"      # 15:05-15:55 JST
-    - cron: "5,15,25,35,45,55 7 * * *"      # 16:05-16:55 JST
+    # The real timer is cron-job.org (15:00 / 15:30 / 16:00 JST), which starts
+    # this workflow like the "Run workflow" button. GitHub's own timer stopped
+    # starting this workflow on 2026-09-30, so it is only a backup here; a backup
+    # run that starts after 17:00 JST does nothing (see lyra_common.too_late).
+    - cron: "20 7 * * *"                    # 16:20 JST (backup)
 concurrency:
   group: lyra-bot  # one Lyra job at a time, so the state file never conflicts
   cancel-in-progress: false
@@ -44,7 +44,9 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-        run: python scripts/lyra_evening.py ${{ inputs.dry_run && '--dry-run' || '' }} ${{ inputs.force && '--force' || '' }}
+        # cron-job.org sends dry_run as the text "false"; the button sends true/false.
+        # Only a real "yes" (true or "true") makes it a test.
+        run: python scripts/lyra_evening.py ${{ (inputs.dry_run == true || inputs.dry_run == 'true') && '--dry-run' || '' }} ${{ (inputs.force == true || inputs.force == 'true') && '--force' || '' }}
 
       - name: Save the bot's state file back to the repo
         run: |
