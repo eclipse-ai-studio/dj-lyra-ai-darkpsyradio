@@ -1,0 +1,30 @@
+name: List Tunee Models
+# Shows the model IDs (and credits per track) available to our Tunee API key.
+# Uses no credits. Run it by hand from the Actions tab when needed.
+on:
+  workflow_dispatch:
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Tunee skill
+        uses: actions/checkout@v4
+        with:
+          repository: tuneeai/free-music-generator
+          path: tunee-skill
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Tunee skill dependencies
+        working-directory: tunee-skill
+        run: pip install .
+
+      - name: List available models
+        working-directory: tunee-skill
+        env:
+          TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+        run: python skills/free-music-generator/scripts/list_models.py --refresh
