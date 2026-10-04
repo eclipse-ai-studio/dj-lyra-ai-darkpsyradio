@@ -67,6 +67,9 @@ jobs:
             git rebase --abort 2>/dev/null || true
             sleep 5
           done
+          # tell notify.py this failed (otherwise it would still send the "OK" email)
+          mkdir -p output
+          python3 -c 'import json; open("output/pipeline_status.json","w").write(json.dumps({"stage":"mixes.jsonの保存","ok":False,"detail":"ミックスはInternet Archiveに保存できましたが、公開リスト(docs/mixes.json)をGitHubに保存できませんでした。このままだと土曜に公開されません。Claudeに相談してください。"}, ensure_ascii=False))'
           exit 1
       - name: Send notification (mix-ready check-in email, or failure alert)
         if: always() && steps.death_check.outputs.is_dead != 'True'
