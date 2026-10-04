@@ -1,9 +1,9 @@
 name: Death Check
 
 on:
-  schedule:
-    - cron: "0 0 * * 0"  # 毎週日曜 00:00 UTC = 09:00 JST
-  workflow_dispatch:  # 手動実行でもテストできるように
+  workflow_dispatch:  # cron-job.orgが毎週日曜 09:00 JST に起動（手動実行も可）
+  # GitHub自身の定時実行は外した（2026-09-30以降、起動が不安定なため）。
+  # 1回動くごとに未公開週の数を数えるので、二重に起動しないよう戻さないこと。
 
 permissions:
   contents: write
@@ -33,7 +33,14 @@ jobs:
           git config user.email "actions@github.com"
           git add docs/heartbeat.json
           git diff --staged --quiet || git commit -m "Update heartbeat status"
-          git push
+          # Other bot jobs (Lyra posts/replies) may have pushed while this ran:
+          # get their commits first, then push (retry a few times).
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          exit 1
 
       - name: Notify Dai of heartbeat status
         if: steps.heartbeat.outputs.missed_weeks != '0'

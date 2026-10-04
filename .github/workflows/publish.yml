@@ -1,8 +1,8 @@
 name: Publish Mix
 on:
-  workflow_dispatch:  # manual runs for testing
-  schedule:
-    - cron: "0 19 * * 5"  # Saturday 04:00 JST (19:00 UTC Friday)
+  workflow_dispatch:  # started by cron-job.org every Saturday 04:00 JST (and for manual runs)
+  # GitHub's own timer was removed: it stopped starting workflows reliably
+  # (2026-09-30〜). cron-job.org starts this instead. Don't add it back.
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -39,7 +39,14 @@ jobs:
           git config user.email "actions@github.com"
           git add docs/mixes.json
           git diff --staged --quiet || git commit -m "Publish weekly mix"
-          git push
+          # Other bot jobs (Lyra posts/replies) may have pushed while this ran:
+          # get their commits first, then push (retry a few times).
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          exit 1
       - name: Send notification (only sends email on failure)
         if: always() && steps.death_check.outputs.is_dead != 'True'
         env:
