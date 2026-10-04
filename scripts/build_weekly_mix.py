@@ -34,11 +34,13 @@ DARKPSY_PROMPT = (
     "organic atmospheric textures, psychedelic soundscapes, "
     "mysterious alien sound effects, hypnotic, nocturnal, aggressive, fast-paced"
 )
-MODEL_ID = "mureka_v9"
+MODEL_ID = "mureka_v9_5"  # Mureka V9.5 (from 2026-10-04; was "mureka_v9"). 20 credits/track on the Basic plan
 
 TARGET_TRACKS = 20
 MAX_CONSECUTIVE_FAILURES = 10
 GENERATION_WAIT_SECONDS = 300  # time to wait before checking the share page
+EXTRA_CHECKS = 10              # if the track isn't ready yet, check again this many times...
+EXTRA_CHECK_INTERVAL = 30      # ...every 30s (up to 5 more minutes), instead of paying for a new track
 GENERATION_SUBPROCESS_TIMEOUT = 300  # seconds; kill a hung generate.py call
 
 # 4 bars at 148 BPM: 60/148 * 4 beats/bar * 4 bars = ~6.49s
@@ -103,9 +105,18 @@ def generate_and_download_one(index: int) -> Path | None:
     time.sleep(GENERATION_WAIT_SECONDS)
 
     try:
-        resp = requests.get(share_url, timeout=30, headers=HEADERS)
-        print(f"[{index:03d}] share page status: {resp.status_code}, length: {len(resp.text)} chars", flush=True)
-        mp3_urls = re.findall(r'https?://[^\s"\'\\]+\.mp3[^\s"\'\\]*', resp.text)
+        for check in range(EXTRA_CHECKS + 1):
+            resp = requests.get(share_url, timeout=30, headers=HEADERS)
+            print(f"[{index:03d}] share page status: {resp.status_code}, length: {len(resp.text)} chars", flush=True)
+            mp3_urls = re.findall(r'https?://[^\s"\'\\]+\.mp3[^\s"\'\\]*', resp.text)
+            if mp3_urls:
+                break
+            if check < EXTRA_CHECKS:
+                # slower models (e.g. V9.5) may need longer: wait a bit more rather than
+                # giving up and spending credits on a brand-new track
+                print(f"[{index:03d}] not ready yet, checking again in {EXTRA_CHECK_INTERVAL}s "
+                      f"({check + 1}/{EXTRA_CHECKS})", flush=True)
+                time.sleep(EXTRA_CHECK_INTERVAL)
         if not mp3_urls:
             print(f"[{index:03d}] no mp3 URL found on share page", flush=True)
             print(f"[{index:03d}] share page preview (first 1000 chars):\n{resp.text[:1000]}", flush=True)
