@@ -26,11 +26,12 @@ import lyra_persona as p
 
 FIXED_CHANCE = 0.10
 MAX_ATTEMPTS = 3
-MAX_NOTICE_LEN = 60  # characters; target is ~30
+MAX_NOTICE_LEN = 55  # characters; target is ~30 (prompt says 50, small margin so near-misses are not rejected)
 
 SIMILAR_LIMIT = 0.8  # 80% or more alike = treated as a copy
 
-BANNED = ["わかりません", "分かりません", "わからない", "分からない", "何も起きていません", "#", "http"]
+BANNED = ["わかりません", "分かりません", "わからない", "分からない", "何も起きていません", "#", "http",
+          "判断できません", "不明", "エラー", "故障", "不具合"]
 
 
 def clean(text: str) -> str:
