@@ -35,6 +35,7 @@ HEARTBEAT_PATH = Path("docs/heartbeat.json")
 STATE_PATH = Path("data/lyra_state.json")
 TEXTS_PATH = Path("data/lyra_texts.json")
 ECLIPSES_PATH = Path("data/eclipses.json")
+SKY_PATH = Path("data/sky.json")  # moon phases, supermoons, meteor shower peaks (2026-2100)
 
 X_API = "https://api.x.com/2"
 CLAUDE_URL = "https://api.anthropic.com/v1/messages"
@@ -42,6 +43,7 @@ CLAUDE_MODEL = os.environ.get("LYRA_MODEL", "claude-haiku-4-5-20251001")
 
 X_LIMIT = 280            # X weighted length limit
 RECENT_NOTICES_MAX = 30  # evening "notices" kept for de-duplication
+RECENT_MORNING_MAX = 30  # morning encouragement lines kept for de-duplication
 KEEP_DAYS = 7            # reply bookkeeping older than this is dropped
 DAILY_REPLY_LIMIT = 30   # replies per Japan-time day
 
@@ -81,6 +83,7 @@ def default_state() -> dict:
         "my_user_id": None,
         "auto_posts": {},          # tweet_id -> {kind, date, text, context}
         "recent_notices": [],      # last 30 evening notices written by Claude
+        "recent_morning_lines": [],  # last 30 morning encouragement lines
         "last_mention_id": None,   # newest mention already handled
         "mentions_start_time": None,  # set on first run (used until the first mention arrives)
         "last_own_tweet_id": None, # newest own tweet already scanned
@@ -112,6 +115,7 @@ def prune_state(state: dict):
     state["reply_counts"] = {k: v for k, v in state["reply_counts"].items() if k in keep_convs}
     state["reply_count_dates"] = {k: d for k, d in state["reply_count_dates"].items() if k in keep_convs}
     state["recent_notices"] = state["recent_notices"][-RECENT_NOTICES_MAX:]
+    state["recent_morning_lines"] = state.get("recent_morning_lines", [])[-RECENT_MORNING_MAX:]
     state["claims"] = {k: v for k, v in state.get("claims", {}).items() if v.get("date", "") >= cutoff}
 
 
@@ -306,6 +310,10 @@ def load_texts() -> dict:
 
 def load_eclipses() -> dict:
     return json.loads(ECLIPSES_PATH.read_text())
+
+
+def load_sky() -> dict:
+    return json.loads(SKY_PATH.read_text())
 
 
 # ---------------------------------------------------------------- X length
