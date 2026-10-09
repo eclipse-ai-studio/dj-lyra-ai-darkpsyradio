@@ -184,17 +184,19 @@ def write_line(examples: list[str], recent: list[str]) -> str:
 
 def pick_line(fixed: list[str], recent: list[str]) -> tuple[str, str, str | None]:
     """Return (line, kind, problem)."""
+    # fixed lines used in the last 30 mornings are not reused (X may refuse an identical post)
+    fresh = [t for t in fixed if t not in set(recent)] or fixed
     if random.random() < FIXED_CHANCE:
-        return random.choice(fixed), "fixed", None
+        return random.choice(fresh), "fixed", None
     try:
         return write_line(fixed, recent), "claude", None
     except ValueError as e:
         # Claude answered, but 3 lines in a row didn't pass the checks: normal now and then, no email
         print(f"[line] {e}")
-        return random.choice(fixed), "fixed (Claude's lines rejected)", None
+        return random.choice(fresh), "fixed (Claude's lines rejected)", None
     except Exception as e:
         # API trouble (balance, key, outage): worth telling Dai
-        return random.choice(fixed), "fixed (fallback)", f"{type(e).__name__}: {e}"
+        return random.choice(fresh), "fixed (fallback)", f"{type(e).__name__}: {e}"
 
 
 # ---------------------------------------------------------------- post

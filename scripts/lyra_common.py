@@ -84,6 +84,7 @@ def default_state() -> dict:
         "auto_posts": {},          # tweet_id -> {kind, date, text, context}
         "recent_notices": [],      # last 30 evening notices written by Claude
         "recent_morning_lines": [],  # last 30 morning encouragement lines
+        "recent_evening_fixed": [],  # last 30 fixed evening lines (not reused while in here)
         "last_mention_id": None,   # newest mention already handled
         "mentions_start_time": None,  # set on first run (used until the first mention arrives)
         "last_own_tweet_id": None, # newest own tweet already scanned
@@ -116,6 +117,7 @@ def prune_state(state: dict):
     state["reply_count_dates"] = {k: d for k, d in state["reply_count_dates"].items() if k in keep_convs}
     state["recent_notices"] = state["recent_notices"][-RECENT_NOTICES_MAX:]
     state["recent_morning_lines"] = state.get("recent_morning_lines", [])[-RECENT_MORNING_MAX:]
+    state["recent_evening_fixed"] = state.get("recent_evening_fixed", [])[-RECENT_NOTICES_MAX:]
     state["claims"] = {k: v for k, v in state.get("claims", {}).items() if v.get("date", "") >= cutoff}
 
 
