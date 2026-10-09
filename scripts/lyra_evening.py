@@ -31,7 +31,9 @@ MAX_NOTICE_LEN = 55  # characters; target is ~30 (prompt says 50, small margin s
 SIMILAR_LIMIT = 0.8  # 80% or more alike = treated as a copy
 
 BANNED = ["わかりません", "分かりません", "わからない", "分からない", "何も起きていません", "#", "http",
-          "判断できません", "不明", "エラー", "故障", "不具合"]
+          "判断できません", "不明", "エラー", "故障", "不具合",
+          # no daily-broadcast wording (she DJs at a club on weekends), and the club name only when asked
+          "今日の放送", "放送中", "放送を終", "放送が終わ", "SPACIA", "スパシア"]
 
 
 def clean(text: str) -> str:
