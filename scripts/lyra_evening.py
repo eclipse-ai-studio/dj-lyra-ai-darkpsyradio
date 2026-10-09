@@ -89,9 +89,12 @@ def main():
             print("Today's evening post is already out (or being checked). Nothing to do.")
             return
     texts = c.load_texts()
-    fixed_pool = texts["evening_food"] + texts["evening_animal"]
     state = c.load_state()
     recent = state["recent_notices"]
+    # fixed lines used in the last 30 fixed posts are not reused (X may refuse an identical post)
+    all_fixed = texts["evening_food"] + texts["evening_animal"]
+    used = set(state.get("recent_evening_fixed", []))
+    fixed_pool = [t for t in all_fixed if t not in used] or all_fixed
 
     problem = None
     if random.random() < FIXED_CHANCE:
@@ -118,7 +121,9 @@ def main():
         # the next run checks X for this exact text before doing anything.
         if kind == "notice":
             state["recent_notices"].append(post)  # keep it out of future notices either way
-            c.save_state(state)
+        else:
+            state.setdefault("recent_evening_fixed", []).append(post)
+        c.save_state(state)
         print(f"[post] {e}")
         return
     except Exception as e:
@@ -130,6 +135,8 @@ def main():
 
     if kind == "notice":
         state["recent_notices"].append(post)
+    else:
+        state.setdefault("recent_evening_fixed", []).append(post)
     c.finish_post(state, "evening", tweet_id)
     print(f"[post] OK id={tweet_id}")
 
