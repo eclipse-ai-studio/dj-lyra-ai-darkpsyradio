@@ -55,7 +55,7 @@ LINE_ROOM = MAX_LINE_LEN * 2 + 2  # weighted length a line can need, incl. the b
 SIMILAR_LIMIT = 0.8   # 80% or more alike = treated as a copy
 BANNED = ["わかりません", "分かりません", "わからない", "分からない", "#", "http",
           "判断できません", "不明", "エラー", "故障", "不具合",
-          "フレア", "磁気嵐", "流星", "日食", "月食", "天気", "雨", "晴れ", "寒", "暑"]
+          "SPACIA", "スパシア", "放送", "フレア", "磁気嵐", "流星", "日食", "月食", "天気", "雨", "晴れ", "寒", "暑"]
 
 MOON_EMOJI = {"新月": "🌑", "上弦の月": "🌓", "満月": "🌕", "下弦の月": "🌗"}
 # days between two of the four main phases (named after the phase that came before)
