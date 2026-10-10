@@ -25,10 +25,25 @@ import lyra_common as c
 import lyra_persona as p
 
 FIXED_CHANCE = 0.10
-MAX_ATTEMPTS = 3
-MAX_NOTICE_LEN = 55  # characters; target is ~30 (prompt says 50, small margin so near-misses are not rejected)
+MAX_ATTEMPTS = 4
+MAX_NOTICE_LEN = 70  # characters; target is ~30 (prompt says at most 50); a bit over is still accepted
 
 SIMILAR_LIMIT = 0.8  # 80% or more alike = treated as a copy
+
+# 2026-10-10 the character setting changed (weekend club DJ, not a daily broadcast).
+# Notices written before that are forgotten once, so Claude isn't shown the old tone as "recent posts".
+NOTICES_RESET = "2026-10-10"
+
+
+def fresh_notices(state: dict) -> list[str]:
+    return state["recent_notices"] if state.get("notices_reset") == NOTICES_RESET else []
+
+
+def remember_notice(state: dict, post: str):
+    if state.get("notices_reset") != NOTICES_RESET:
+        state["recent_notices"] = []
+        state["notices_reset"] = NOTICES_RESET
+    state["recent_notices"].append(post)
 
 BANNED = ["わかりません", "分かりません", "わからない", "分からない", "何も起きていません", "#", "http",
           "判断できません", "不明", "エラー", "故障", "不具合",
@@ -59,16 +74,27 @@ def is_usable(text: str, recent: list[str]) -> str | None:
     return None
 
 
+def retry_hint(text: str, reason: str) -> str:
+    """Tell Claude why the last try was not used, so the next one fixes it."""
+    if reason.startswith("too long"):
+        return f"\n\n（さっきの案は{len(text)}字で長すぎました。30字前後、長くても50字以内で、短く書き直してください）"
+    if reason.startswith("too close"):
+        return "\n\n（さっきの案はお手本や最近のつぶやきに似すぎていました。別の内容で書いてください）"
+    return f"\n\n（さっきの案は使えませんでした: {reason}。ルールを守って書き直してください）"
+
+
 def write_notice(recent: list[str]) -> str:
+    prompt = p.evening_user_prompt(recent)
     last_reason = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        text = clean(c.claude_write(p.EVENING_SYSTEM, p.evening_user_prompt(recent), max_tokens=150))
+        text = clean(c.claude_write(p.EVENING_SYSTEM, prompt, max_tokens=150))
         reason = is_usable(text, recent)
         print(f"[claude] attempt {attempt}: {text!r} -> {reason or 'OK'}")
         if reason is None:
             return text
         last_reason = reason
-    raise RuntimeError(f"Claude could not write a usable notice ({last_reason})")
+        prompt = p.evening_user_prompt(recent) + retry_hint(text, reason)
+    raise ValueError(f"Claude's notices did not pass the checks ({last_reason})")
 
 
 def main():
@@ -90,7 +116,7 @@ def main():
             return
     texts = c.load_texts()
     state = c.load_state()
-    recent = state["recent_notices"]
+    recent = fresh_notices(state)
     # fixed lines used in the last 30 fixed posts are not reused (X may refuse an identical post)
     all_fixed = texts["evening_food"] + texts["evening_animal"]
     used = set(state.get("recent_evening_fixed", []))
@@ -102,7 +128,12 @@ def main():
     else:
         try:
             post, kind = write_notice(recent), "notice"
+        except ValueError as e:
+            # Claude answered, but every try broke a rule (too long etc.): no email, just use a fixed line
+            print(f"[claude] {e}")
+            post, kind = random.choice(fixed_pool), "fixed (Claude's notices rejected)"
         except Exception as e:
+            # API trouble (balance, key, outage): worth telling Dai
             problem = f"{type(e).__name__}: {e}"
             post, kind = random.choice(fixed_pool), "fixed (fallback)"
 
@@ -120,7 +151,7 @@ def main():
         # X didn't answer clearly: it may be posted. The "posting" flag stays;
         # the next run checks X for this exact text before doing anything.
         if kind == "notice":
-            state["recent_notices"].append(post)  # keep it out of future notices either way
+            remember_notice(state, post)  # keep it out of future notices either way
         else:
             state.setdefault("recent_evening_fixed", []).append(post)
         c.save_state(state)
@@ -134,7 +165,7 @@ def main():
         return
 
     if kind == "notice":
-        state["recent_notices"].append(post)
+        remember_notice(state, post)
     else:
         state.setdefault("recent_evening_fixed", []).append(post)
     c.finish_post(state, "evening", tweet_id)
