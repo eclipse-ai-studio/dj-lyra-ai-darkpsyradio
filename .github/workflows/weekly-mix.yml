@@ -1,6 +1,11 @@
 name: Weekly Mix Pipeline
 on:
   workflow_dispatch:  # started by cron-job.org every Sunday 04:00 JST (and for manual runs)
+    inputs:
+      reuse_last_run:
+        description: "Reuse: make the mix from the previous run's tracks (no new tracks, no credits)"
+        type: boolean
+        default: false
   # GitHub's own timer was removed: it stopped starting workflows reliably
   # (2026-09-30〜). cron-job.org starts this instead. Don't add it back, or
   # the mix may be made twice.
@@ -46,6 +51,9 @@ jobs:
         if: steps.death_check.outputs.is_dead != 'True'
         env:
           TUNEE_API_KEY: ${{ secrets.TUNEE_API_KEY }}
+          GH_TOKEN: ${{ github.token }}  # reuse mode reads the previous run's log
+          # cron-job.org sends no inputs (normal run); only a real "yes" turns reuse on
+          REUSE_LAST_RUN: ${{ (inputs.reuse_last_run == true || inputs.reuse_last_run == 'true') && 'true' || 'false' }}
         run: python scripts/build_weekly_mix.py
       - name: Upload mix to Internet Archive (flagged unpublished)
         if: success() && steps.death_check.outputs.is_dead != 'True'
