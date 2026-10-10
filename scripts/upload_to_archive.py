@@ -120,11 +120,14 @@ def main():
     MIXES_JSON_PATH.write_text(json.dumps(mixes, ensure_ascii=False, indent=2))
     print(f"[mixes.json] now has {len(mixes)} mix(es), newest is unpublished")
 
+    notes_path = Path("output/mix_notes.txt")  # written by build_weekly_mix.py (trimmed silence etc.)
+    notes = f"\n\n【ミックスのメモ】\n{notes_path.read_text().strip()}" if notes_path.exists() else ""
     write_status(
         "mix_ready",
         True,
         f"新しいミックスをInternet Archiveに保存しました(未公開)。聴いて確認できます: {mix_url}\n"
-        f"土曜日に自動で公開されます。気に入らない場合は、もう一度ワークフローを実行して作り直してください。",
+        f"土曜日に自動で公開されます。気に入らない場合は、もう一度ワークフローを実行して作り直してください。"
+        + notes,
     )
 
 
