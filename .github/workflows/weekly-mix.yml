@@ -73,10 +73,10 @@ jobs:
           git diff --staged --quiet || git commit -m "Add new weekly mix to archive list (unpublished)"
           # Other bot jobs (Lyra posts/replies) may have pushed while this ran:
           # get their commits first, then push (retry a few times).
-          for i in 1 2 3; do
+          for i in 1 2 3 4 5; do
             git pull --rebase --autostash && git push && exit 0
             git rebase --abort 2>/dev/null || true
-            sleep 5
+            sleep $((i * 10))  # wait a bit longer each time (10s, 20s, 30s, 40s)
           done
           # tell notify.py this failed (otherwise it would still send the "OK" email)
           mkdir -p output
