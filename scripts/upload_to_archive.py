@@ -108,6 +108,13 @@ def main():
     else:
         mixes = []
 
+    # a new mix replaces any mix still waiting to be published (e.g. Dai remade it):
+    # the older ones are marked so they are never published, not even later
+    for m in mixes:
+        if not m.get("published", False) and not m.get("superseded", False):
+            m["superseded"] = True
+            print(f"[mixes.json] older unpublished mix replaced: {m.get('archive_url')}")
+
     mixes.append({
         "date": today,
         "title": ia_title,

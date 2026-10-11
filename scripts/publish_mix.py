@@ -5,9 +5,9 @@ DJ Lyra Ai - Publish the newest unpublished mix
 Meant to run on a Saturday schedule (separate from generation, which can
 happen any day). Looks at docs/mixes.json:
   - If one or more unpublished mixes exist, publishes only the NEWEST one
-    (sets published=True, publish_date=today, and rewrites the public-facing
-    title to use today's date instead of the generation date). Any other
-    unpublished entries are left alone (harmless leftovers).
+    (the one added last; sets published=True, publish_date=today, and rewrites
+    the public-facing title to use today's date instead of the generation date).
+    Mixes marked "superseded" (replaced by a remake) are never published.
   - If no unpublished mixes exist, does nothing this week (no
     re-announcement of an already-published mix).
 Writes a "published" GitHub Actions output (true/false) so the workflow
@@ -50,7 +50,7 @@ def main():
         return
 
     mixes = json.loads(MIXES_JSON_PATH.read_text())
-    unpublished = [m for m in mixes if not m.get("published", False)]
+    unpublished = [m for m in mixes if not m.get("published", False) and not m.get("superseded", False)]
 
     if not unpublished:
         print("No unpublished mixes found. Nothing to publish this week.")
@@ -62,8 +62,8 @@ def main():
         write_github_output(published=False)
         return
 
-    # pick the one with the newest date (generation date, used only for ordering)
-    newest = max(unpublished, key=lambda m: m["date"])
+    # the newest is the one added last (dates are UTC days and can tie, e.g. a remake on the same morning)
+    newest = unpublished[-1]
     today = date.today().isoformat()
 
     # public-facing title uses the publish date, not the generation date
