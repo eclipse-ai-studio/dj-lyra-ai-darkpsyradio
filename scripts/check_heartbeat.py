@@ -1,6 +1,8 @@
 import json
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+
+JST = timezone(timedelta(hours=9))  # publish_date is a Japan date
 
 MIXES_PATH = "docs/mixes.json"
 HEARTBEAT_PATH = "docs/heartbeat.json"
@@ -57,8 +59,7 @@ def main():
     if published:
         # 生成日ではなく、実際に公開された日を基準に最新を判定する
         latest = max(published, key=lambda m: m["publish_date"])
-        latest_date = datetime.fromisoformat(latest["publish_date"]).replace(tzinfo=timezone.utc)
-        days_since = (now - latest_date).days
+        days_since = (now.astimezone(JST).date() - date.fromisoformat(latest["publish_date"])).days
         heartbeat["last_published_date"] = latest["publish_date"]
     else:
         # プロジェクト開始直後などpublished実績が一度もない場合は未達成扱い

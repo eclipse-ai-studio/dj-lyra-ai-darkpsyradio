@@ -22,7 +22,7 @@ Usage:
 import json
 import os
 import sys
-from datetime import date, datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import internetarchive as ia
@@ -30,6 +30,8 @@ import internetarchive as ia
 MIX_PATH = Path("output/weekly_mix.mp3")
 MIXES_JSON_PATH = Path("docs/mixes.json")
 STATUS_PATH = Path("output/pipeline_status.json")
+
+JST = timezone(timedelta(hours=9))  # dates and the identifier's time are Japan time (the runner clock is UTC)
 
 IDENTIFIER_PREFIX = "dj-lyra-ai-darkpsyradio-mix"
 UPLOAD_FILENAME = "djlyraai_weekly_mix.mp3"
@@ -56,8 +58,9 @@ def main():
         write_status("archive_upload", False, "アップロードするミックスファイルが見つかりません")
         sys.exit(1)
 
-    today = date.today().isoformat()
-    now_stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    now = datetime.now(JST)
+    today = now.date().isoformat()
+    now_stamp = now.strftime("%Y-%m-%d-%H%M%S")
     # identifier includes a time component so same-day re-runs don't overwrite each other
     identifier = f"{IDENTIFIER_PREFIX}-{now_stamp}"
     # This is a placeholder title, only used on Internet Archive's own item

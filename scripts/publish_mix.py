@@ -18,7 +18,9 @@ Usage:
 import json
 import os
 import sys
-from datetime import date
+from datetime import datetime, timedelta, timezone
+
+JST = timezone(timedelta(hours=9))  # dates on the site are Japan dates
 from pathlib import Path
 
 MIXES_JSON_PATH = Path("docs/mixes.json")
@@ -62,9 +64,9 @@ def main():
         write_github_output(published=False)
         return
 
-    # the newest is the one added last (dates are UTC days and can tie, e.g. a remake on the same morning)
+    # the newest is the one added last (dates can tie, e.g. a remake on the same morning)
     newest = unpublished[-1]
-    today = date.today().isoformat()
+    today = datetime.now(JST).date().isoformat()  # Japan date (the runner clock is UTC)
 
     # public-facing title uses the publish date, not the generation date
     public_title = f"DJ Lyra Ai - Darkpsy Mix {today}"
