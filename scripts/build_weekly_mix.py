@@ -7,7 +7,7 @@ DJ Lyra Ai - Weekly Mix Pipeline
 3. Retries on failure; aborts after MAX_CONSECUTIVE_FAILURES in a row
    Each track is checked right away: silence at the start/end is trimmed off,
    and a track with a long silent gap inside (or almost empty) is thrown away
-   and another one is made. At most MAX_GENERATED tracks are made per run;
+   and another one is made. Tunee is asked at most MAX_GENERATED times per run;
    if TARGET_TRACKS usable tracks still aren't there, the run stops with a
    "not enough tracks" email (before mixing)
 4. Crossfades all successfully-downloaded tracks into one continuous mix
@@ -51,8 +51,9 @@ DARKPSY_PROMPT = (
 MODEL_ID = "mureka_v9_5"  # Mureka V9.5 (from 2026-10-04; was "mureka_v9"). 20 credits/track on the Basic plan
 
 TARGET_TRACKS = 20     # 20 tracks ≈ 59 minutes with V9.5 (about 3:05 per track)
-MAX_GENERATED = 25     # normal run: make at most this many tracks (bad ones included)
-TOP_UP_EXTRA = 5       # top up run: make at most (missing tracks + this)
+MAX_GENERATED = 25     # normal run: ask Tunee for at most this many tracks (failed and bad ones included)
+TOP_UP_EXTRA = 5       # top up run: ask for at most (missing tracks + this)
+DOWNLOAD_TRIES = 3     # the mp3 download itself is retried (no credits) before giving a track up
 MAX_CONSECUTIVE_FAILURES = 10
 GENERATION_WAIT_SECONDS = 300  # time to wait before checking the share page
 EXTRA_CHECKS = 10              # if the track isn't ready yet, check again this many times...
@@ -147,10 +148,20 @@ def download_from_share_page(index: int, share_url: str, extra_checks: int) -> P
             print(f"[{index:03d}] share page preview (first 1000 chars):\n{resp.text[:1000]}", flush=True)
             return None
 
-        audio_resp = requests.get(mp3_urls[0], timeout=60, headers=HEADERS)
-        if audio_resp.status_code != 200 or len(audio_resp.content) < 10_000:
-            print(f"[{index:03d}] download failed or file too small "
-                  f"(status={audio_resp.status_code}, bytes={len(audio_resp.content)})", flush=True)
+        audio_resp = None
+        for attempt in range(1, DOWNLOAD_TRIES + 1):
+            try:
+                audio_resp = requests.get(mp3_urls[0], timeout=60, headers=HEADERS)
+                if audio_resp.status_code == 200 and len(audio_resp.content) >= 10_000:
+                    break
+                print(f"[{index:03d}] download failed or file too small "
+                      f"(status={audio_resp.status_code}, bytes={len(audio_resp.content)}), try {attempt}/{DOWNLOAD_TRIES}", flush=True)
+            except requests.RequestException as e:
+                print(f"[{index:03d}] download network error: {e}, try {attempt}/{DOWNLOAD_TRIES}", flush=True)
+            audio_resp = None
+            if attempt < DOWNLOAD_TRIES:
+                time.sleep(10)
+        if audio_resp is None:
             return None
 
         out_path = TRACKS_DIR / f"track_{index:03d}.mp3"
@@ -329,14 +340,16 @@ def check_track(index: int, path: Path) -> str | None:
 
 
 def make_tracks(tracks: list[Path], dropped: list[str], max_new: int) -> bool:
-    """Make new tracks until there are TARGET_TRACKS usable ones, making at most
-    max_new tracks. Returns True if the target was reached."""
+    """Make new tracks until there are TARGET_TRACKS usable ones, asking Tunee
+    at most max_new times (every request counts, even if the download failed,
+    because it may have used credits). Returns True if the target was reached."""
     made = 0
     consecutive_failures = 0
     while len(tracks) < TARGET_TRACKS:
         if made >= max_new:
             return False
         index = next_index()
+        made += 1
         path = generate_and_download_one(index)
         if path is None:
             consecutive_failures += 1
@@ -356,13 +369,12 @@ def make_tracks(tracks: list[Path], dropped: list[str], max_new: int) -> bool:
                 sys.exit(1)
             continue
         consecutive_failures = 0
-        made += 1
         problem = check_track(index, path)
         if problem:
             dropped.append(f"{index:03d}（{problem}）")
         else:
             tracks.append(path)
-        print(f"[progress] usable {len(tracks)}/{TARGET_TRACKS}, made {made}/{max_new} this run", flush=True)
+        print(f"[progress] usable {len(tracks)}/{TARGET_TRACKS}, requests {made}/{max_new} this run", flush=True)
     return True
 
 
@@ -407,13 +419,13 @@ def main():
         if missing > 0 and not make_tracks(tracks, dropped, missing + TOP_UP_EXTRA):
             not_enough(tracks, dropped,
                        f"曲生成のリトライに失敗し、{TARGET_TRACKS}曲そろいませんでした"
-                       f"（使える曲 {len(tracks)}/{TARGET_TRACKS}曲、足りない{missing}曲＋{TOP_UP_EXTRA}曲まで作りました）。\n"
+                       f"（使える曲 {len(tracks)}/{TARGET_TRACKS}曲、足りない{missing}曲＋{TOP_UP_EXTRA}回までTuneeに頼みました）。\n"
                        f"何かがおかしい可能性があります（Tuneeの生成モデルの不調など）。Claudeに相談してください。")
     else:
         # --- normal weekly run ---
         if not make_tracks(tracks, dropped, MAX_GENERATED):
             not_enough(tracks, dropped,
-                       f"曲がそろいませんでした（{MAX_GENERATED}曲作って、使える曲は{len(tracks)}/{TARGET_TRACKS}曲）。\n"
+                       f"曲がそろいませんでした（Tuneeに{MAX_GENERATED}回頼んで、使える曲は{len(tracks)}/{TARGET_TRACKS}曲）。\n"
                        f"足りない曲を作ってミックスまで仕上げるには、GitHubのActions → Weekly Mix Pipeline → "
                        f"Run workflow で「Top up」にチェックを入れて実行してください"
                        f"（そろった曲はそのまま使い、足りない分だけ作ります）。")
