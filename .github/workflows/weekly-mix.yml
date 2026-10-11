@@ -9,6 +9,9 @@ on:
   # GitHub's own timer was removed: it stopped starting workflows reliably
   # (2026-09-30〜). cron-job.org starts this instead. Don't add it back, or
   # the mix may be made twice.
+concurrency:
+  group: weekly-mix  # never two mix runs at once (double start / manual run during the Sunday run): no double credits
+  cancel-in-progress: false
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest

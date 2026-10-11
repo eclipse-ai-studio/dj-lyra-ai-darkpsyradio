@@ -41,10 +41,10 @@ jobs:
           git diff --staged --quiet || git commit -m "Publish weekly mix"
           # Other bot jobs (Lyra posts/replies) may have pushed while this ran:
           # get their commits first, then push (retry a few times).
-          for i in 1 2 3; do
+          for i in 1 2 3 4 5; do
             git pull --rebase --autostash && git push && exit 0
             git rebase --abort 2>/dev/null || true
-            sleep 5
+            sleep $((i * 10))  # wait a bit longer each time (10s, 20s, 30s, 40s)
           done
           # tell notify.py this failed (otherwise it would still send the "OK" email)
           mkdir -p output
@@ -57,6 +57,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python scripts/notify.py
       - name: Post announcement to X
+        id: x_post
         if: steps.death_check.outputs.is_dead != 'True' && steps.publish.outputs.published == 'true'
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
@@ -64,7 +65,34 @@ jobs:
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         run: |
-          python scripts/post_to_x.py "📡 This week's transmission is live. Have a beautiful weekend.
+          MSG="📡 This week's transmission is live. Have a beautiful weekend.
           The archive is always open - come find us anytime. 🛸✨
           https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/
           #DarkpsyRadio #AIDJ #Darkpsy"
+          # up to 3 tries, 1 minute apart. If X says "duplicate", an earlier try did go out: that counts as done.
+          for i in 1 2 3; do
+            OUT=$(python scripts/post_to_x.py "$MSG" 2>&1) && { echo "$OUT"; exit 0; }
+            echo "$OUT"
+            if echo "$OUT" | grep -qi "duplicate"; then echo "Already posted (duplicate). Done."; exit 0; fi
+            [ "$i" -lt 3 ] && sleep 60
+          done
+          exit 1
+      - name: Email Dai if the X announcement failed
+        if: always() && steps.x_post.outcome == 'failure'
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os, smtplib
+          from email.mime.text import MIMEText
+          a, pw = os.environ.get("GMAIL_ADDRESS"), os.environ.get("GMAIL_APP_PASSWORD")
+          if a and pw:
+              url = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+              m = MIMEText("今週のミックスは公開できましたが、Xへの告知の投稿に失敗した可能性があります。\n"
+                           "Xを確認して、出ていなければ手動で告知してください。\n\n実行ログ:\n" + url)
+              m["Subject"], m["From"], m["To"] = "【DJ Lyra Ai】ミックス公開のX告知に失敗しました", a, a
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+                  s.login(a, pw)
+                  s.send_message(m)
+          PY

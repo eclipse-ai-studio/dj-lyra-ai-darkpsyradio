@@ -62,3 +62,23 @@ jobs:
           No new mixes will follow. Thank you for listening.
           The archive remains open, forever. 🛸
           https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/"
+
+      - name: Email Dai if the death check itself failed
+        if: failure()
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os, smtplib
+          from email.mime.text import MIMEText
+          a, pw = os.environ.get("GMAIL_ADDRESS"), os.environ.get("GMAIL_APP_PASSWORD")
+          if a and pw:
+              url = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+              m = MIMEText("毎週のDeath Check（公開が続いているかの確認）がエラーで止まりました。\n"
+                           "Claudeに相談してください。\n\n実行ログ:\n" + url)
+              m["Subject"], m["From"], m["To"] = "【DJ Lyra Ai】Death Checkが途中で止まりました", a, a
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+                  s.login(a, pw)
+                  s.send_message(m)
+          PY
