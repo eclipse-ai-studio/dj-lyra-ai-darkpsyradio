@@ -7,7 +7,9 @@ DJ Lyra Ai - Weekly Mix Pipeline
 3. Retries on failure; aborts after MAX_CONSECUTIVE_FAILURES in a row
    Each track is checked right away: silence at the start/end is trimmed off,
    and a track with a long silent gap inside (or almost empty) is thrown away
-   and replaced by a new one (up to MAX_SILENT_REPLACEMENTS times)
+   and another one is made. At most MAX_GENERATED tracks are made per run;
+   if TARGET_TRACKS usable tracks still aren't there, the run stops with a
+   "not enough tracks" email (before mixing)
 4. Crossfades all successfully-downloaded tracks into one continuous mix
 5. Checks the mix for minimum duration and long silent gaps (auto-fails if found)
 6. Exports the final mix as MP3 128kbps
@@ -15,12 +17,11 @@ DJ Lyra Ai - Weekly Mix Pipeline
 On any failure, writes a status file (pipeline_status.json) describing what
 went wrong, for the notification step to read and email about.
 
-Reuse mode (REUSE_LAST_RUN=true, the "reuse" box in Run workflow):
-no new tracks are generated (no credits used). The share URLs of the tracks
-from the previous Weekly Mix run are read from that run's log, the tracks are
-downloaded again from Tunee, and the mix is built from them. Tracks with a
-silent gap inside are left out (not replaced) as long as the mix stays long
-enough.
+Top up mode (TOP_UP=true, the "Top up" box in Run workflow):
+the tracks of the previous Weekly Mix run are reused (their share URLs are read
+from that run's log and downloaded again from Tunee, no credits), and only the
+missing tracks are made (at most missing + TOP_UP_EXTRA). Then the mix is built
+and saved as usual.
 
 Usage:
     python scripts/build_weekly_mix.py
@@ -49,7 +50,9 @@ DARKPSY_PROMPT = (
 )
 MODEL_ID = "mureka_v9_5"  # Mureka V9.5 (from 2026-10-04; was "mureka_v9"). 20 credits/track on the Basic plan
 
-TARGET_TRACKS = 20
+TARGET_TRACKS = 20     # 20 tracks ≈ 59 minutes with V9.5 (about 3:05 per track)
+MAX_GENERATED = 25     # normal run: make at most this many tracks (bad ones included)
+TOP_UP_EXTRA = 5       # top up run: make at most (missing tracks + this)
 MAX_CONSECUTIVE_FAILURES = 10
 GENERATION_WAIT_SECONDS = 300  # time to wait before checking the share page
 EXTRA_CHECKS = 10              # if the track isn't ready yet, check again this many times...
@@ -61,7 +64,6 @@ CROSSFADE_MS = int(60 / 148 * 4 * 4 * 1000)
 MIN_MIX_MINUTES = 40
 MAX_SILENCE_MS = 4000
 SILENCE_THRESH_DB = -40
-MAX_SILENT_REPLACEMENTS = 6   # tracks with a silent gap inside are replaced, at most this many times per run
 MIN_TRACK_SECONDS = 60        # a track shorter than this after trimming is treated as broken
 EDGE_KEEP_MS = 50             # keep a hair of the silence at the edges so cuts aren't abrupt
 SEEK_STEP_MS = 10             # silence scan step (1ms is very slow on a 60-minute mix; 10ms is plenty)
@@ -184,14 +186,22 @@ def load_trimmed(path: Path) -> AudioSegment:
     return seg[start:stop] if stop > start else seg[:0]
 
 
+def gap_level(seg: AudioSegment, a: int, b: int) -> str:
+    """Average loudness of the middle of a silent gap (the edges still hold the fade of the music)."""
+    mid = seg[a + 500:b - 500] if b - a > 1500 else seg[a:b]
+    level = mid.dBFS
+    return "完全な無音" if level == float("-inf") else f"平均{level:.0f}dB"
+
+
 def track_problem(path: Path) -> str | None:
     """None if the track is usable, else why not (silent gap inside / too short)."""
     seg = load_trimmed(path)
     if len(seg) < MIN_TRACK_SECONDS * 1000:
-        return f"too short after trimming silence ({len(seg) / 1000:.0f}s)"
+        return f"短すぎ（無音を除くと{len(seg) / 1000:.0f}秒）"
     gaps = detect_silence(seg, min_silence_len=MAX_SILENCE_MS, silence_thresh=SILENCE_THRESH_DB, seek_step=SEEK_STEP_MS)
     if gaps:
-        return "silent gap inside at " + ", ".join(f"{mmss(a)}-{mmss(b)}" for a, b in gaps)
+        # also say how loud the "silent" part really was, to check the threshold
+        return "途中に無音 " + ", ".join(f"{mmss(a)}-{mmss(b)}（{gap_level(seg, a, b)}）" for a, b in gaps)
     return None
 
 
@@ -255,48 +265,17 @@ def write_mix_notes(tracks: list[Path], dropped: list[str]):
     starts = [s for s, _ in used]
     ends = [e for _, e in used]
     lines = [
+        f"使った曲: {len(tracks)}曲",
         f"曲の頭の無音: 最大{max(starts) / 1000:.1f}秒、平均{sum(starts) / len(starts) / 1000:.1f}秒",
         f"曲の終わりの無音: 最大{max(ends) / 1000:.1f}秒、平均{sum(ends) / len(ends) / 1000:.1f}秒",
         f"頭と終わりの無音の合計が6.5秒を超えていた曲のつなぎ目: "
         f"{sum(1 for a, b in zip(ends, starts[1:]) if a + b > CROSSFADE_MS)}か所（カット済み）",
     ]
     if dropped:
-        lines.append("途中に無音があったので外した曲: " + " / ".join(dropped))
+        lines.append("外した曲: " + " / ".join(dropped))
     MIX_NOTES_PATH.parent.mkdir(parents=True, exist_ok=True)
     MIX_NOTES_PATH.write_text("\n".join(lines) + "\n")
     print("[notes]\n" + "\n".join(lines), flush=True)
-
-
-def reuse_main():
-    """Build the mix from the previous run's tracks (no generation, no credits)."""
-    TRACKS_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        urls = previous_run_share_urls()
-    except Exception as e:
-        write_status("mix_build", False, f"前回の曲の読み込みに失敗しました（{type(e).__name__}: {e}）。"
-                                          f"使い回しをやめて、通常どおり実行してください。")
-        print(f"ABORTING: {e}", flush=True)
-        sys.exit(1)
-    tracks, dropped = [], []
-    for i, url in enumerate(urls, 1):
-        print(f"[{i:03d}] share_url: {url}", flush=True)  # same format, so a later reuse run can read this log too
-        path = download_from_share_page(i, url, 0)
-        if path is None:
-            dropped.append(f"{i:03d}（ダウンロード失敗）")
-            continue
-        try:
-            problem = track_problem(path)
-        except Exception as e:
-            problem = f"could not read the audio file ({type(e).__name__}: {e})"
-        if problem:
-            print(f"[{i:03d}] track left out: {problem}", flush=True)
-            dropped.append(f"{i:03d}（{problem}）")
-            continue
-        tracks.append(path)
-    if not tracks:
-        write_status("mix_build", False, "前回の曲を1曲も使えませんでした。通常どおり実行してください。")
-        sys.exit(2)
-    finish_mix(tracks, dropped)
 
 
 def finish_mix(successful_tracks: list[Path], dropped: list[str]):
@@ -330,53 +309,43 @@ def finish_mix(successful_tracks: list[Path], dropped: list[str]):
     write_status("complete", True, f"{duration_min:.1f}分のミックスを正常に生成しました")
 
 
-def main():
-    if os.environ.get("REUSE_LAST_RUN", "").lower() == "true":
-        reuse_main()
-        return
-    TRACKS_DIR.mkdir(parents=True, exist_ok=True)
+LOG_INDEX = [0]  # running number printed in the log as [NNN]; unique per run so a later top up can read the log
 
-    # --- Phase 1: generate + download tracks, with retry on failure ---
-    successful_tracks: list[Path] = []
+
+def next_index() -> int:
+    LOG_INDEX[0] += 1
+    return LOG_INDEX[0]
+
+
+def check_track(index: int, path: Path) -> str | None:
+    try:
+        problem = track_problem(path)
+    except Exception as e:  # file can't be decoded
+        problem = f"音声ファイルを読めない（{type(e).__name__}: {e}）"
+    if problem:
+        print(f"[{index:03d}] track left out: {problem}", flush=True)
+        path.unlink(missing_ok=True)
+    return problem
+
+
+def make_tracks(tracks: list[Path], dropped: list[str], max_new: int) -> bool:
+    """Make new tracks until there are TARGET_TRACKS usable ones, making at most
+    max_new tracks. Returns True if the target was reached."""
+    made = 0
     consecutive_failures = 0
-    silent_replacements = 0
-
-    while len(successful_tracks) < TARGET_TRACKS:
-        index = len(successful_tracks) + 1
-        track_path = generate_and_download_one(index)
-
-        if track_path is not None:
-            consecutive_failures = 0
-            try:
-                problem = track_problem(track_path)
-            except Exception as e:  # file can't be decoded
-                problem = f"could not read the audio file ({type(e).__name__}: {e})"
-            if problem is None:
-                successful_tracks.append(track_path)
-                continue
-            silent_replacements += 1
-            print(f"[{index:03d}] track rejected: {problem} "
-                  f"(replacement {silent_replacements}/{MAX_SILENT_REPLACEMENTS})", flush=True)
-            track_path.unlink(missing_ok=True)
-            if silent_replacements > MAX_SILENT_REPLACEMENTS:
-                detail = (
-                    f"ミックスの生成に失敗しました(無音区間のある曲が多すぎました: "
-                    f"作り直し{MAX_SILENT_REPLACEMENTS}回を超えた、成功{len(successful_tracks)}/{TARGET_TRACKS}曲)。\n"
-                    f"最後に見つかった問題: {problem}\n"
-                    f"生成モデル({MODEL_ID})の曲に途中で長い無音が入りやすい可能性があります。"
-                    f"続く場合は、build_weekly_mix.py の MODEL_ID を mureka_v9 に戻すことを検討してください。"
-                )
-                write_status("mix_build", False, detail)
-                print(f"ABORTING: {detail}", flush=True)
-                sys.exit(2)
-        else:
+    while len(tracks) < TARGET_TRACKS:
+        if made >= max_new:
+            return False
+        index = next_index()
+        path = generate_and_download_one(index)
+        if path is None:
             consecutive_failures += 1
             print(f"consecutive failures: {consecutive_failures}/{MAX_CONSECUTIVE_FAILURES}", flush=True)
             if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                 detail = (
                     f"{TARGET_TRACKS}曲の生成が完了しませんでした"
                     f"(連続{MAX_CONSECUTIVE_FAILURES}回の生成失敗、"
-                    f"成功{len(successful_tracks)}/{TARGET_TRACKS}曲)。以下をご確認ください:\n"
+                    f"成功{len(tracks)}/{TARGET_TRACKS}曲)。以下をご確認ください:\n"
                     f"1. Tunee AIのクレジット残量\n"
                     f"2. APIキーの有効期限\n"
                     f"3. Tunee AI側の障害・メンテナンス情報\n"
@@ -385,9 +354,72 @@ def main():
                 write_status("generation", False, detail)
                 print(f"ABORTING: {detail}", flush=True)
                 sys.exit(1)
+            continue
+        consecutive_failures = 0
+        made += 1
+        problem = check_track(index, path)
+        if problem:
+            dropped.append(f"{index:03d}（{problem}）")
+        else:
+            tracks.append(path)
+        print(f"[progress] usable {len(tracks)}/{TARGET_TRACKS}, made {made}/{max_new} this run", flush=True)
+    return True
 
-    print(f"\nAll {len(successful_tracks)} tracks downloaded successfully.", flush=True)
-    finish_mix(successful_tracks, [])
+
+def not_enough(tracks: list[Path], dropped: list[str], detail: str):
+    if dropped:
+        detail += "\n\n使えなかった曲: " + " / ".join(dropped)
+    write_status("generation", False, detail)
+    print(f"ABORTING: {detail}", flush=True)
+    sys.exit(1)
+
+
+def main():
+    TRACKS_DIR.mkdir(parents=True, exist_ok=True)
+    tracks: list[Path] = []
+    dropped: list[str] = []
+
+    if os.environ.get("TOP_UP", "").lower() == "true":
+        # --- top up: reuse the previous run's tracks, make only the missing ones ---
+        try:
+            urls = previous_run_share_urls()
+        except Exception as e:
+            write_status("generation", False, f"前回の曲の読み込みに失敗しました（{type(e).__name__}: {e}）。"
+                                                f"Top upのチェックを外して、通常どおり実行してください。")
+            print(f"ABORTING: {e}", flush=True)
+            sys.exit(1)
+        for url in urls:
+            if len(tracks) >= TARGET_TRACKS:
+                break
+            index = next_index()
+            print(f"[{index:03d}] share_url: {url}", flush=True)  # same format, so a later top up can read this log too
+            path = download_from_share_page(index, url, 0)
+            if path is None:
+                dropped.append(f"{index:03d}（ダウンロード失敗）")
+                continue
+            problem = check_track(index, path)
+            if problem:
+                dropped.append(f"{index:03d}（{problem}）")
+            else:
+                tracks.append(path)
+        missing = TARGET_TRACKS - len(tracks)
+        print(f"[top up] reused {len(tracks)} tracks, making up to {missing + TOP_UP_EXTRA} new ones for the {missing} missing", flush=True)
+        if missing > 0 and not make_tracks(tracks, dropped, missing + TOP_UP_EXTRA):
+            not_enough(tracks, dropped,
+                       f"曲生成のリトライに失敗し、{TARGET_TRACKS}曲そろいませんでした"
+                       f"（使える曲 {len(tracks)}/{TARGET_TRACKS}曲、足りない{missing}曲＋{TOP_UP_EXTRA}曲まで作りました）。\n"
+                       f"何かがおかしい可能性があります（Tuneeの生成モデルの不調など）。Claudeに相談してください。")
+    else:
+        # --- normal weekly run ---
+        if not make_tracks(tracks, dropped, MAX_GENERATED):
+            not_enough(tracks, dropped,
+                       f"曲がそろいませんでした（{MAX_GENERATED}曲作って、使える曲は{len(tracks)}/{TARGET_TRACKS}曲）。\n"
+                       f"足りない曲を作ってミックスまで仕上げるには、GitHubのActions → Weekly Mix Pipeline → "
+                       f"Run workflow で「Top up」にチェックを入れて実行してください"
+                       f"（そろった曲はそのまま使い、足りない分だけ作ります）。")
+
+    print(f"\nAll {len(tracks)} tracks ready.", flush=True)
+    finish_mix(tracks, dropped)
 
 
 if __name__ == "__main__":
