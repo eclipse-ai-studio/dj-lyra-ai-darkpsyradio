@@ -243,10 +243,7 @@ def previous_run_share_urls() -> list[str]:
         raise TopUpRefused("前回のWeekly Mixの実行が見つかりませんでした。")
     run = prev[0]
     print(f"[reuse] reading the log of run {run['id']} ({run['created_at']}, {run['conclusion']})", flush=True)
-    if run["conclusion"] == "success":
-        # the last run made a mix already: topping up would only rebuild a copy from the same tracks
-        raise TopUpRefused("前回の実行は成功していて、ミックスはできています（Top upは不要です）。"
-                           "ミックスを作り直したいときは、チェックを入れずに Run workflow を実行してください。")
+    PREV_SUCCESS[0] = run["conclusion"] == "success"
     logs = requests.get(f"{api}/repos/{repo}/actions/runs/{run['id']}/logs", headers=h, timeout=60)
     logs.raise_for_status()
     text = ""
@@ -276,6 +273,9 @@ def previous_run_share_urls() -> list[str]:
         raise TopUpRefused("前回の実行には使い回せる曲がありませんでした（すぐ止まった回など）。"
                            "曲を一から作る場合は、チェックを入れずに Run workflow を実行してください。")
     return out
+
+
+PREV_SUCCESS = [False]  # the previous run finished with a mix
 
 
 class TopUpRefused(Exception):
@@ -440,6 +440,13 @@ def main():
             else:
                 tracks.append(path)
         missing = TARGET_TRACKS - len(tracks)
+        if missing <= 0 and PREV_SUCCESS[0]:
+            # the last run already made a full mix from these tracks: a top up would only make a copy
+            msg = ("前回の実行は成功していて、ミックスは目標の曲数でできています（Top upは不要です）。"
+                   "ミックスを作り直したいときは、チェックを入れずに Run workflow を実行してください。")
+            write_status("top_up", False, f"Top upを中止しました（曲は作っていません。クレジットは使っていません）。\n{msg}")
+            print(f"ABORTING: {msg}", flush=True)
+            sys.exit(1)
         print(f"[top up] reused {len(tracks)} tracks, making up to {missing + TOP_UP_EXTRA} new ones for the {missing} missing", flush=True)
         if missing > 0 and not make_tracks(tracks, dropped, missing + TOP_UP_EXTRA):
             not_enough(tracks, dropped,
