@@ -38,6 +38,18 @@ def main():
         write_outputs(newly_dead=False, missed_weeks=heartbeat.get("missed_weeks", DEATH_THRESHOLD_WEEKS))
         return
 
+    # a second run in the same week (double start) must not count the week twice
+    last = heartbeat.get("last_checked")
+    if last:
+        try:
+            since = datetime.now(timezone.utc) - datetime.fromisoformat(last)
+            if since.days < 6:
+                print(f"Already checked {since.days} day(s) ago ({last}). Not counting again.")
+                write_outputs(newly_dead=False, missed_weeks=0)  # no email for a skipped run
+                return
+        except ValueError:
+            pass
+
     mixes = load_json(MIXES_PATH)
     published = [m for m in mixes if m.get("published") and m.get("publish_date")]
     now = datetime.now(timezone.utc)

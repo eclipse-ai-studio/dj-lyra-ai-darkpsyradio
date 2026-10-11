@@ -54,6 +54,8 @@ TARGET_TRACKS = 20     # 20 tracks ≈ 59 minutes with V9.5 (about 3:05 per trac
 MAX_GENERATED = 25     # normal run: ask Tunee for at most this many tracks (failed and bad ones included)
 TOP_UP_EXTRA = 5       # top up run: ask for at most (missing tracks + this)
 DOWNLOAD_TRIES = 3     # the mp3 download itself is retried (no credits) before giving a track up
+GENERATION_DEADLINE_MIN = 290  # stop making tracks after this (the job is killed at 350; mixing + upload need the rest)
+STARTED = time.monotonic()
 MAX_CONSECUTIVE_FAILURES = 10
 GENERATION_WAIT_SECONDS = 300  # time to wait before checking the share page
 EXTRA_CHECKS = 10              # if the track isn't ready yet, check again this many times...
@@ -238,9 +240,13 @@ def previous_run_share_urls() -> list[str]:
     runs.raise_for_status()
     prev = [r for r in runs.json()["workflow_runs"] if str(r["id"]) != this_run and r["status"] == "completed"]
     if not prev:
-        raise RuntimeError("no previous Weekly Mix run found")
+        raise TopUpRefused("前回のWeekly Mixの実行が見つかりませんでした。")
     run = prev[0]
     print(f"[reuse] reading the log of run {run['id']} ({run['created_at']}, {run['conclusion']})", flush=True)
+    if run["conclusion"] == "success":
+        # the last run made a mix already: topping up would only rebuild a copy from the same tracks
+        raise TopUpRefused("前回の実行は成功していて、ミックスはできています（Top upは不要です）。"
+                           "ミックスを作り直したいときは、チェックを入れずに Run workflow を実行してください。")
     logs = requests.get(f"{api}/repos/{repo}/actions/runs/{run['id']}/logs", headers=h, timeout=60)
     logs.raise_for_status()
     text = ""
@@ -265,7 +271,15 @@ def previous_run_share_urls() -> list[str]:
             seen.add(u)
             out.append(u)
     print(f"[reuse] found {len(out)} tracks in the previous run", flush=True)
+    if not out:
+        # nothing to reuse (e.g. the last run stopped right away): don't silently make 25 new tracks
+        raise TopUpRefused("前回の実行には使い回せる曲がありませんでした（すぐ止まった回など）。"
+                           "曲を一から作る場合は、チェックを入れずに Run workflow を実行してください。")
     return out
+
+
+class TopUpRefused(Exception):
+    """Top up should not run; nothing was generated (no credits used)."""
 
 
 def write_mix_notes(tracks: list[Path], dropped: list[str]):
@@ -320,6 +334,7 @@ def finish_mix(successful_tracks: list[Path], dropped: list[str]):
     write_status("complete", True, f"{duration_min:.1f}分のミックスを正常に生成しました")
 
 
+TIMED_OUT = [False]  # set when make_tracks stopped because of the time limit
 LOG_INDEX = [0]  # running number printed in the log as [NNN]; unique per run so a later top up can read the log
 
 
@@ -347,6 +362,10 @@ def make_tracks(tracks: list[Path], dropped: list[str], max_new: int) -> bool:
     consecutive_failures = 0
     while len(tracks) < TARGET_TRACKS:
         if made >= max_new:
+            return False
+        if (time.monotonic() - STARTED) / 60 > GENERATION_DEADLINE_MIN:
+            print(f"[deadline] {GENERATION_DEADLINE_MIN} minutes used, stopping so the job isn't killed", flush=True)
+            TIMED_OUT[0] = True
             return False
         index = next_index()
         made += 1
@@ -379,6 +398,8 @@ def make_tracks(tracks: list[Path], dropped: list[str], max_new: int) -> bool:
 
 
 def not_enough(tracks: list[Path], dropped: list[str], detail: str):
+    if TIMED_OUT[0]:
+        detail = "（Tuneeの生成が遅く、時間切れで途中までになりました）\n" + detail
     if dropped:
         detail += "\n\n使えなかった曲: " + " / ".join(dropped)
     write_status("generation", False, detail)
@@ -395,9 +416,13 @@ def main():
         # --- top up: reuse the previous run's tracks, make only the missing ones ---
         try:
             urls = previous_run_share_urls()
+        except TopUpRefused as e:
+            write_status("top_up", False, f"Top upを中止しました（曲は作っていません。クレジットは使っていません）。\n{e}")
+            print(f"ABORTING: {e}", flush=True)
+            sys.exit(1)
         except Exception as e:
-            write_status("generation", False, f"前回の曲の読み込みに失敗しました（{type(e).__name__}: {e}）。"
-                                                f"Top upのチェックを外して、通常どおり実行してください。")
+            write_status("top_up", False, f"前回の曲の読み込みに失敗しました（{type(e).__name__}: {e}）。"
+                                          f"曲は作っていません。Claudeに相談してください。")
             print(f"ABORTING: {e}", flush=True)
             sys.exit(1)
         for url in urls:
