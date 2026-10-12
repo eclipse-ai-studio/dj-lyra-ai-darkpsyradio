@@ -48,9 +48,9 @@ DARKPSY_PROMPT = (
     "organic atmospheric textures, psychedelic soundscapes, "
     "mysterious alien sound effects, hypnotic, nocturnal, aggressive, fast-paced"
 )
-MODEL_ID = "mureka_v9_5"  # Mureka V9.5 (from 2026-10-04; was "mureka_v9"). 20 credits/track on the Basic plan
+MODEL_ID = "mureka_v9"  # Mureka V9 (back from V9.5 on 2026-10-12 to save credits). 12 credits/track on the Basic plan (V9.5 = 20)
 
-TARGET_TRACKS = 20     # 20 tracks ≈ 59 minutes with V9.5 (about 3:05 per track)
+TARGET_TRACKS = 20     # 20 tracks ≈ 1 hour (about 3 min per track)
 MAX_GENERATED = 25     # normal run: ask Tunee for at most this many tracks (failed and bad ones included)
 TOP_UP_EXTRA = 5       # top up run: ask for at most (missing tracks + this)
 DOWNLOAD_TRIES = 3     # the mp3 download itself is retried (no credits) before giving a track up
