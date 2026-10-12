@@ -85,6 +85,8 @@ def default_state() -> dict:
         "recent_notices": [],      # last 30 evening notices written by Claude
         "recent_morning_lines": [],  # last 30 morning encouragement lines
         "recent_evening_fixed": [],  # last 30 fixed evening lines (not reused while in here)
+        "fixed_cycle": {},         # "morning"/"evening" -> fixed lines already used this round (all used once → new round)
+        "fixed_last": {},          # "morning"/"evening" -> the last fixed line (not first in the next round)
         "last_mention_id": None,   # newest mention already handled
         "mentions_start_time": None,  # set on first run (used until the first mention arrives)
         "last_own_tweet_id": None, # newest own tweet already scanned
@@ -96,6 +98,36 @@ def default_state() -> dict:
         "missed_notified": {},     # "morning"/"evening" -> date Dai was told the post never went out
         "errors_notified": {},     # problem key -> date Dai was last emailed about it (once a day)
     }
+
+
+def fixed_pool(state: dict, key: str, all_fixed: list[str]) -> list[str]:
+    """Fixed lines not yet used this round. Every line is used once before any repeats;
+    when all are used a new round starts (without the line that was just used)."""
+    used = state.get("fixed_cycle", {}).get(key)
+    if used is None:  # first run with rounds: start from what was recently used
+        old = state.get("recent_evening_fixed" if key == "evening" else "recent_morning_lines", [])
+        used = [t for t in old if t in all_fixed]
+    last = state.get("fixed_last", {}).get(key)
+    pool = [t for t in all_fixed if t not in set(used) and t != last]
+    return pool or [t for t in all_fixed if t != last] or all_fixed
+
+
+def remember_fixed(state: dict, key: str, line: str, all_fixed: list[str]):
+    """Mark a fixed line as used this round (call only when a fixed line was posted)."""
+    cycle = state.setdefault("fixed_cycle", {})
+    used = cycle.get(key)
+    if used is None:
+        old = state.get("recent_evening_fixed" if key == "evening" else "recent_morning_lines", [])
+        used = [t for t in old if t in all_fixed]
+    used = [t for t in used if t in all_fixed]  # forget lines removed from the list
+    if all(t in used for t in all_fixed):
+        used = []  # the previous round was already complete: this line opens a new round
+    if line not in used:
+        used.append(line)
+    if all(t in used for t in all_fixed):
+        used = []  # every line used once: next time a new round starts
+    cycle[key] = used
+    state.setdefault("fixed_last", {})[key] = line
 
 
 def load_state() -> dict:
