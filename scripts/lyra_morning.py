@@ -139,6 +139,8 @@ def moon_today(sky: dict, date: str) -> tuple[str, dict | None]:
     for back in range(1, 10):  # main phases are ~7.4 days apart
         prev = sky["moon"].get((d - timedelta(days=back)).strftime("%Y-%m-%d"))
         if prev:
+            if prev["phase"] == "新月" and back == 1:
+                return "新月後🌒", None  # the day after new moon: too thin to call 三日月 yet
             return MOON_BETWEEN[prev["phase"]], None
     raise ValueError(f"no moon data near {date}")
 
