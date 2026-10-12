@@ -117,10 +117,9 @@ def main():
     texts = c.load_texts()
     state = c.load_state()
     recent = fresh_notices(state)
-    # fixed lines used in the last 30 fixed posts are not reused (X may refuse an identical post)
+    # fixed lines: every one is used once (random order) before any repeats, then a new round
     all_fixed = texts["evening_food"] + texts["evening_animal"]
-    used = set(state.get("recent_evening_fixed", []))
-    fixed_pool = [t for t in all_fixed if t not in used] or all_fixed
+    fixed_pool = c.fixed_pool(state, "evening", all_fixed)
 
     problem = None
     if random.random() < FIXED_CHANCE:
@@ -154,6 +153,7 @@ def main():
             remember_notice(state, post)  # keep it out of future notices either way
         else:
             state.setdefault("recent_evening_fixed", []).append(post)
+            c.remember_fixed(state, "evening", post, all_fixed)
         c.save_state(state)
         print(f"[post] {e}")
         return
@@ -168,6 +168,7 @@ def main():
         remember_notice(state, post)
     else:
         state.setdefault("recent_evening_fixed", []).append(post)
+        c.remember_fixed(state, "evening", post, all_fixed)
     c.finish_post(state, "evening", tweet_id)
     print(f"[post] OK id={tweet_id}")
 

@@ -184,10 +184,9 @@ def write_line(examples: list[str], recent: list[str]) -> str:
     raise ValueError(f"Claude's lines did not pass the checks ({last_reason})")
 
 
-def pick_line(fixed: list[str], recent: list[str]) -> tuple[str, str, str | None]:
-    """Return (line, kind, problem)."""
-    # fixed lines used in the last 30 mornings are not reused (X may refuse an identical post)
-    fresh = [t for t in fixed if t not in set(recent)] or fixed
+def pick_line(fixed: list[str], recent: list[str], fresh: list[str]) -> tuple[str, str, str | None]:
+    """Return (line, kind, problem). fresh = fixed lines not used yet this round
+    (every fixed line is used once, in random order, before any repeats)."""
     if random.random() < FIXED_CHANCE:
         return random.choice(fresh), "fixed", None
     try:
@@ -293,7 +292,8 @@ def main():
     recent = state_now.get("recent_morning_lines", [])
     line, line_kind = None, "left out (no room)"
     if room_for_line(forecast, eclipse):
-        line, line_kind, problem = pick_line(texts["morning_encouragement"], recent)
+        fresh = c.fixed_pool(state_now, "morning", texts["morning_encouragement"])
+        line, line_kind, problem = pick_line(texts["morning_encouragement"], recent, fresh)
         if problem:
             problems.append(f"励ましの一言をClaudeで作れなかったため、固定文を使いました: {problem}")
 
@@ -341,6 +341,8 @@ def main():
         # the next run checks X for this exact text before doing anything.
         if line:
             state.setdefault("recent_morning_lines", []).append(line)
+            if line_kind.startswith("fixed"):
+                c.remember_fixed(state, "morning", line, texts["morning_encouragement"])
             c.save_state(state)
         print(f"[post] {e}")
         return
@@ -353,6 +355,8 @@ def main():
 
     if line:
         state.setdefault("recent_morning_lines", []).append(line)
+        if line_kind.startswith("fixed"):
+            c.remember_fixed(state, "morning", line, texts["morning_encouragement"])
     c.finish_post(state, "morning", tweet_id)
     print(f"[post] OK id={tweet_id}")
 
