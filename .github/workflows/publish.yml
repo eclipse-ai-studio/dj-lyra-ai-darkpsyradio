@@ -68,7 +68,7 @@ jobs:
           MSG="📡 This week's transmission is live. Have a beautiful weekend.
           The archive is always open - come find us anytime. 🛸✨
           https://eclipse-ai-studio.github.io/dj-lyra-ai-darkpsyradio/
-          #DarkpsyRadio #AIDJ #Darkpsy"
+          #DarkpsyRadio #AIDJ #Psytrance"
           # up to 3 tries, 1 minute apart. If X says "duplicate", an earlier try did go out: that counts as done.
           for i in 1 2 3; do
             OUT=$(python scripts/post_to_x.py "$MSG" 2>&1) && { echo "$OUT"; exit 0; }
