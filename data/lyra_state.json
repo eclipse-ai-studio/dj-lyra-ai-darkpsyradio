@@ -1,24 +1,6 @@
 {
  "my_user_id": "2069810033890828288",
  "auto_posts": {
-  "2110853449759777214": {
-   "kind": "morning",
-   "date": "2026-10-16",
-   "text": "今日の宇宙天気予報☀️\n太陽フレア: R1-R2 20% / R3 5%\n磁気嵐: なし\n月: 三日月🌒\n\n今日も一日、あなたのままでいてください。",
-   "context": "今日の太陽フレア予報（NOAA）: R1-R2 20%、R3 5%\n今日の磁気嵐予報（NOAA）: 最大Kp 2.67 → G1未満（なし）\n今日の月: 三日月🌒"
-  },
-  "2110974239180242971": {
-   "kind": "evening",
-   "date": "2026-10-16",
-   "text": "寿司食べたいです。",
-   "context": ""
-  },
-  "2111170524051370218": {
-   "kind": "weekly",
-   "date": "2026-10-16",
-   "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VUkPd\n#DarkpsyRadio #AIDJ #Darkpsy",
-   "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
-  },
   "2111215825403388080": {
    "kind": "morning",
    "date": "2026-10-17",
@@ -159,11 +141,10 @@
   "morning": "いってらっしゃい。",
   "evening": "スズメかわいい。"
  },
- "last_mention_id": "2113162176659910752",
+ "last_mention_id": "2113643921314078970",
  "mentions_start_time": "2026-09-26T12:03:49Z",
  "last_own_tweet_id": "2113642601807302966",
  "replied_comment_ids": {
-  "2110925457361392074": "2026-10-16",
   "2111258757686788215": "2026-10-17",
   "2112224406436995118": "2026-10-20",
   "2112221497896931490": "2026-10-20",
@@ -179,7 +160,7 @@
  "reply_counts": {},
  "reply_count_dates": {},
  "daily": {
-  "date": "2026-10-23",
+  "date": "2026-10-24",
   "count": 0
  },
  "claims": {
