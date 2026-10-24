@@ -48,7 +48,8 @@ def remember_notice(state: dict, post: str):
 BANNED = ["わかりません", "分かりません", "わからない", "分からない", "何も起きていません", "#", "http",
           "判断できません", "不明", "エラー", "故障", "不具合",
           # no daily-broadcast wording (she DJs at a club on weekends), and the club name only when asked
-          "今日の放送", "放送中", "放送を終", "放送が終わ", "SPACIA", "スパシア"]
+          "今日の放送", "放送中", "放送を終", "放送が終わ", "SPACIA", "スパシア",
+          "博士"]  # 2026-10-24: posts never bring up 博士 (only replies, when asked)
 
 
 def clean(text: str) -> str:
