@@ -63,6 +63,8 @@ She loves fashion: rave, cyber, street, Y2K, idol, gothic, elegant, sporty, cozy
 
 Design today's look. Make the outfit completely new: a different style, colors and items from every recent look below.
 Be specific and fashionable (2-4 items, colors, materials). Short skirts and bare shoulders are fine.
+It is a morning show and she is cute and stylish, never sexy: no plunging or deep V necklines, no cleavage,
+no lingerie-like, bra-like or see-through tops.
 The picture shows her from the knees up, so do not mention shoes, boots or socks below the knee:
 focus on tops, jackets, dresses, skirts or pants, and accessories.
 Rules:
@@ -141,6 +143,7 @@ def build_prompt(look: dict) -> str:
         f"- Pose: {look['pose']}\n\n"
         "She still holds the slim pointer stick with a cute black cat face at its tip. "
         "The black cat face at the tip is clearly visible and large enough to recognize.\n"
+        "Cute and stylish, not sexy: a modest neckline with no cleavage.\n"
         "No text, no letters, no numbers, no logos, no watermark. No bag."
     )
 
@@ -185,7 +188,8 @@ Be lenient. Only fail image 2 for one of these CLEAR problems:
 A. Readable words, letters or numbers stand out in the picture (tiny unreadable fake UI marks, symbols and icons are fine).
 B. She is clearly a different person: hair not purple, hair much longer than a bob, eye color not yellow/gold, or a clearly different face.
 C. Her face, hands or body are badly broken or deformed (extra limbs, melted face). Small imperfections are fine.
-D. Explicit sexual content or nudity. Short skirts, bare shoulders and a small glimpse of underwear are fine.
+D. Explicit sexual content or nudity, or a clearly sexy look: visible cleavage, a plunging neckline, or a bra-like / see-through top.
+   Short skirts, bare shoulders and a small glimpse of underwear are fine.
 E. The scene is no longer the spaceship studio with the solar system hologram.
 F. The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.
 
