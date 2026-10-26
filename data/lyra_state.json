@@ -90,6 +90,12 @@
    "date": "2026-10-26",
    "text": "カラスが賢そう。",
    "context": ""
+  },
+  "2114839840252424343": {
+   "kind": "morning",
+   "date": "2026-10-27",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: R1-R2 10% / R3 1%\n磁気嵐: なし\n月: 満月後🌖\n\n今日も一日、小さな喜びを大事にしてください。",
+   "context": "今日の太陽フレア予報（NOAA）: R1-R2 10%、R3 1%\n今日の磁気嵐予報（NOAA）: 最大Kp 1.67 → G1未満（なし）\n今日の月: 満月後🌖"
   }
  },
  "recent_notices": [
@@ -124,7 +130,8 @@
   "いってらっしゃい。",
   "楽しい一日になりますように。",
   "今日も一日、お互いがんばりましょう。",
-  "無理せずいきましょう。"
+  "無理せずいきましょう。",
+  "今日も一日、小さな喜びを大事にしてください。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -187,7 +194,7 @@
  "claims": {
   "morning": {
    "date": "2026-10-27",
-   "status": "posting",
+   "status": "done",
    "at": "2026-10-27T07:01:22+09:00",
    "post": {
     "kind": "morning",
@@ -212,5 +219,12 @@
   "morning": "2026-10-02"
  },
  "errors_notified": {},
- "notices_reset": "2026-10-10"
+ "notices_reset": "2026-10-10",
+ "recent_image_looks": [
+  {
+   "outfit": "A sleeveless crop top in iridescent holographic silver with a high neckline and geometric cutouts on the sides, paired with high-waisted wide-leg trousers in deep emerald green with a sharp crease. A oversized cropped blazer in matte black with sharp shoulders worn open over the top. Silver chunky chain necklace and translucent holographic arm cuff on her left wrist.",
+   "expression": "Bright, confident smile with a playful wink at the viewer",
+   "pose": "Standing naturally with weight slightly on her left leg, holding the black cat pointer stick horizontally across her body at chest height, gesturing toward the holographic solar system map with an inviting presentation stance"
+  }
+ ]
 }
