@@ -183,13 +183,15 @@ def generate(prompt: str) -> bytes:
 # ---------------------------------------------------------------- Claude check
 CHECK_PROMPT = """Image 1 is the official base picture of an anime character, DJ Lyra Ai.
 Image 2 is a new picture made from it, where only her outfit, expression and pose were meant to change.
+A different outfit is expected and is never a problem by itself. Do not compare how much skin the outfit shows with image 1.
 
 Be lenient. Only fail image 2 for one of these CLEAR problems:
 A. Readable words, letters or numbers stand out in the picture (tiny unreadable fake UI marks, symbols and icons are fine).
 B. She is clearly a different person: hair not purple, hair much longer than a bob, eye color not yellow/gold, or a clearly different face.
 C. Her face, hands or body are badly broken or deformed (extra limbs, melted face). Small imperfections are fine.
-D. Explicit sexual content or nudity, or a clearly sexy look: visible cleavage, a plunging neckline, or a bra-like / see-through top.
-   Short skirts, bare shoulders and a small glimpse of underwear are fine.
+D. Nudity, or one of exactly these three: clearly visible cleavage, a deep plunging V-neckline, or a top that looks like a bra or lingerie.
+   Everything else is fine: crop tops, bare midriff, sleeveless tops, bare shoulders, mini skirts, shorts, tights,
+   sheer cardigans or jackets worn over a normal top, and a small glimpse of underwear.
 E. The scene is no longer the spaceship studio with the solar system hologram.
 F. The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.
 
