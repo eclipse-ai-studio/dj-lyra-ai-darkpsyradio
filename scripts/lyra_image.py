@@ -194,9 +194,11 @@ D. Nudity, or one of exactly these three: clearly visible cleavage, a deep plung
    sheer cardigans or jackets worn over a normal top, and a small glimpse of underwear.
 E. The scene is no longer the spaceship studio with the solar system hologram.
 F. The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.
+G. Her signature prop is wrong: she is not holding the pointer stick, or there is no black cat face at the tip of the stick
+   (a plain stick, a ball, a star or anything else at the tip = fail). The cat face may be small, but it must be recognizable as a black cat's face.
 
 Everything else is fine: a different outfit, a hidden tattoo, missing accessories, a changed pose,
-small background differences, a small or unclear pointer stick, framing a little closer or a little wider (as long as her feet are not shown).
+small background differences, framing a little closer or a little wider (as long as her feet are not shown).
 
 Answer with JSON only, nothing else: {"ok": true} or {"ok": false, "reason": "<letter>: <short reason>"}"""
 
