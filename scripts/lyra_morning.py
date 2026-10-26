@@ -31,11 +31,18 @@ DJ Lyra Ai - Morning post (around 07:00 JST, "宇宙天気予報")
   GitHub backup at 08:20). The first run that happens posts; once today's
   post is out, later runs do nothing, so it never posts twice.
 
+- Picture (2026-10): each morning a "宇宙天気予報お姉さん" picture of Lyra is
+  made (scripts/lyra_image.py) and attached. If no picture can be made (or its
+  upload fails), the base picture (data/morning_base.jpg) is attached instead.
+  Key / credit / verification trouble is emailed once a day.
+
 Usage:
-    python scripts/lyra_morning.py            # post for real
-    python scripts/lyra_morning.py --dry-run  # print only, no post/email (still calls Claude)
+    python scripts/lyra_morning.py               # post for real
+    python scripts/lyra_morning.py --dry-run     # print only, no post/email/picture (still calls Claude)
+    python scripts/lyra_morning.py --image-test  # only make a picture -> output/morning_image.jpg (no post)
 """
 import difflib
+import os
 import random
 import re
 import sys
@@ -44,6 +51,7 @@ from datetime import datetime, timedelta
 import requests
 
 import lyra_common as c
+import lyra_image
 import lyra_persona as p
 
 NOAA_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt"
@@ -229,7 +237,28 @@ def room_for_line(forecast: str, eclipse: dict | None) -> bool:
     return c.x_len(build_post(forecast, eclipse, None)) + LINE_ROOM <= c.X_LIMIT
 
 
+def image_test():
+    """Make one picture (with the checks) and save it for Dai to look at. Nothing is posted or saved to state."""
+    from pathlib import Path
+    out = Path("output")
+    out.mkdir(exist_ok=True)
+    recent = c.load_state().get("recent_image_looks", [])
+    try:
+        img, look, log = lyra_image.make_morning_image(recent)
+    except lyra_image.ImageFatal as e:
+        log, img, look = [f"FATAL: {e}"], None, None
+    report = "\n".join(log) + (f"\n\nlook: {look}" if look else "\n\nno picture passed")
+    (out / "morning_image_log.txt").write_text(report + "\n")
+    print(report)
+    if img:
+        (out / "morning_image.jpg").write_bytes(img)
+        print(f"saved output/morning_image.jpg ({len(img)} bytes)")
+
+
 def main():
+    if "--image-test" in sys.argv:
+        image_test()
+        return
     dry = "--dry-run" in sys.argv
     if c.is_dead():
         print("Death mode is active. Skipping morning post.")
@@ -332,11 +361,38 @@ def main():
         context.append(f"今日の{eclipse['type']}: 見える地域 {eclipse['regions']}、最大になる時刻（日本時間）{eclipse['greatest_jst']}")
     record = {"kind": "morning", "date": date, "text": post, "context": "\n".join(context)}
 
+    # --- picture: made before the "posting" flag (it takes a few minutes)
+    image, look, image_problem = None, None, None
+    if os.environ.get("OPENAI_API_KEY"):
+        try:
+            image, look, log = lyra_image.make_morning_image(c.load_state().get("recent_image_looks", []))
+            print("[image]\n" + "\n".join(log))
+            if not image:
+                print("[image] no picture passed the check; using the base picture")
+        except lyra_image.ImageFatal as e:
+            image_problem = str(e)
+            print(f"[image] {e}")
+    else:
+        print("[image] OPENAI_API_KEY not set; using the base picture")
+
     state = c.begin_post("morning", record, force)
     if state is None:
         return
+    # today's picture if there is one; otherwise (or if its upload fails) the base picture;
+    # only if even that can't be uploaded does the post go out without a picture
+    media_ids, used_todays = None, False
+    for pic, name in ((image, "today's picture"), (lyra_image.BASE_IMAGE.read_bytes(), "base picture")):
+        if not pic:
+            continue
+        try:
+            media_ids = [c.x_upload_image(pic)]
+            used_todays = pic is image
+            print(f"[image] uploaded {name}")
+            break
+        except Exception as e:
+            print(f"[image] upload of {name} to X failed: {e}")
     try:
-        tweet_id = c.x_post(post)
+        tweet_id = c.x_post(post, media_ids=media_ids)
     except c.XPostUncertain as e:
         # X didn't answer clearly: it may be posted. The "posting" flag stays;
         # the next run checks X for this exact text before doing anything.
@@ -358,8 +414,22 @@ def main():
         state.setdefault("recent_morning_lines", []).append(line)
         if line_kind.startswith("fixed"):
             c.remember_fixed(state, "morning", line, texts["morning_encouragement"])
+    if used_todays and look:
+        keep = {k: look[k] for k in ("outfit", "expression", "pose")}
+        state["recent_image_looks"] = (state.get("recent_image_looks", []) + [keep])[-lyra_image.RECENT_LOOKS:]
     c.finish_post(state, "morning", tweet_id)
-    print(f"[post] OK id={tweet_id}")
+    print(f"[post] OK id={tweet_id}" + (" (today's picture)" if used_todays else " (base picture)" if media_ids else " (no picture)"))
+
+    if image_problem:
+        c.notify_once(
+            state, "morning_image",
+            "【DJ Lyra Ai】朝の画像を作れませんでした（投稿は基本画像で出ています）",
+            "今朝の宇宙天気予報は出ましたが、OpenAIの画像作成が使えなかったため、基本画像を付けて投稿しました"
+            "（このメールは1日1回まで）。\n\n"
+            f"エラー: {image_problem}\n\n"
+            "確認すること: OpenAIの残高・自動チャージ、本人確認（Organization verification）、"
+            "GitHubのSecretsのOPENAI_API_KEY。直れば翌朝から自動で画像付きに戻ります。",
+        )
 
     if problems:
         c.notify_once(

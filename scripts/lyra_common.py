@@ -378,7 +378,20 @@ class XPostUncertain(Exception):
     connection). It MAY have been posted, so it must not be retried blindly."""
 
 
-def x_post(text: str, reply_to: str | None = None) -> str:
+def x_upload_image(image: bytes) -> str:
+    """Upload a JPEG/PNG for a post. Returns the media id (raises on failure)."""
+    import base64
+    r = requests.post(
+        f"{X_API}/media/upload", auth=_x_auth(),
+        json={"media": base64.b64encode(image).decode(), "media_category": "tweet_image"},
+        timeout=120,
+    )
+    if r.status_code not in (200, 201):
+        raise RuntimeError(f"X media upload failed: {r.status_code} {r.text[:300]}")
+    return r.json()["data"]["id"]
+
+
+def x_post(text: str, reply_to: str | None = None, media_ids: list[str] | None = None) -> str:
     """Post (or reply) with the Made with AI label. Returns the new tweet id.
     Raises XPostUncertain if we can't tell whether it went out."""
     if x_len(text) > X_LIMIT:
@@ -386,6 +399,8 @@ def x_post(text: str, reply_to: str | None = None) -> str:
     body = {"text": text, "made_with_ai": True}
     if reply_to:
         body["reply"] = {"in_reply_to_tweet_id": str(reply_to)}
+    if media_ids:
+        body["media"] = {"media_ids": [str(m) for m in media_ids]}
     try:
         r = requests.post(f"{X_API}/tweets", auth=_x_auth(), json=body, timeout=30)
     except requests.exceptions.ConnectTimeout as e:
