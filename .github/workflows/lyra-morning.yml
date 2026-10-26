@@ -10,6 +10,10 @@ on:
         description: "Force: post even if today's post is flagged (only when the email says so)"
         type: boolean
         default: false
+      image_test:
+        description: "Image test: only make today's picture and save it under Artifacts (nothing is posted)"
+        type: boolean
+        default: false
   schedule:
     # The real timer is cron-job.org (07:00 / 07:30 / 08:00 JST), which starts
     # this workflow like the "Run workflow" button. GitHub's own timer stopped
@@ -22,7 +26,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25  # the picture can take a few minutes (up to 10 tries)
     steps:
       - name: Checkout this repo
         uses: actions/checkout@v4
@@ -42,11 +46,20 @@ jobs:
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         # cron-job.org sends dry_run as the text "false"; the button sends true/false.
         # Only a real "yes" (true or "true") makes it a test.
-        run: python scripts/lyra_morning.py ${{ (inputs.dry_run == true || inputs.dry_run == 'true') && '--dry-run' || '' }} ${{ (inputs.force == true || inputs.force == 'true') && '--force' || '' }}
+        run: python scripts/lyra_morning.py ${{ (inputs.dry_run == true || inputs.dry_run == 'true') && '--dry-run' || '' }} ${{ (inputs.force == true || inputs.force == 'true') && '--force' || '' }} ${{ (inputs.image_test == true || inputs.image_test == 'true') && '--image-test' || '' }}
+
+      - name: Keep the test picture (image test only)
+        if: always() && (inputs.image_test == true || inputs.image_test == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: morning-image-test
+          path: output/
+          if-no-files-found: warn
 
       - name: Save the bot's state file back to the repo
         run: |
