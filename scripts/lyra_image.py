@@ -63,12 +63,14 @@ She loves fashion: rave, cyber, street, Y2K, idol, gothic, elegant, sporty, cozy
 
 Design today's look. Make the outfit completely new: a different style, colors and items from every recent look below.
 Be specific and fashionable (2-4 items, colors, materials). Short skirts and bare shoulders are fine.
+The picture shows her from the knees up, so do not mention shoes, boots or socks below the knee:
+focus on tops, jackets, dresses, skirts or pants, and accessories.
 Rules:
 - No bag, no backpack, no fanny pack.
 - No words, letters, numbers or logos printed on the clothes.
 - No hats or helmets that hide her purple bob hair, no masks or glasses covering her eyes.
 - Expression: a cheerful, friendly one (smile, wink, laugh, excited, shy, confident, dreamy...), different from the recent ones.
-- Pose: a natural presenter pose that fits a wide 16:9 picture. She must hold the black cat pointer stick
+- Pose: a natural presenter pose for a knee-up shot (no full-body or leg poses, no sitting, no jumping). She must hold the black cat pointer stick
   (pointing at the hologram, at a planet, at the viewer, twirling it, resting it on her shoulder, etc.). Different from the recent ones.
 
 Recent looks (do NOT repeat or closely copy any of them):
@@ -128,13 +130,17 @@ def build_prompt(look: dict) -> str:
     return (
         "Use the attached image as the base. Keep the same character, the same futuristic "
         "spaceship broadcast studio background, the same holographic solar system map, "
-        "the same anime art style, lighting and 16:9 framing. Keep her face, purple bob hair, "
+        "the same anime art style and lighting. Keep her face, purple bob hair, "
         "yellow eyes, piercings and headset microphone exactly the same.\n\n"
+        "Framing: keep exactly the same camera distance, angle and 16:9 framing as the base image. "
+        "She is shown from the knees up (a knee-up shot), standing on the left side of the frame. "
+        "Do not zoom out. Her feet and shoes must not be visible.\n\n"
         "Change only her outfit, expression and pose:\n"
         f"- Outfit: {look['outfit']}\n"
         f"- Expression: {look['expression']}\n"
         f"- Pose: {look['pose']}\n\n"
-        "She still holds the slim pointer stick with a cute black cat face at its tip.\n"
+        "She still holds the slim pointer stick with a cute black cat face at its tip. "
+        "The black cat face at the tip is clearly visible and large enough to recognize.\n"
         "No text, no letters, no numbers, no logos, no watermark. No bag."
     )
 
@@ -181,9 +187,10 @@ B. She is clearly a different person: hair not purple, hair much longer than a b
 C. Her face, hands or body are badly broken or deformed (extra limbs, melted face). Small imperfections are fine.
 D. Explicit sexual content or nudity. Short skirts, bare shoulders and a small glimpse of underwear are fine.
 E. The scene is no longer the spaceship studio with the solar system hologram.
+F. The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.
 
 Everything else is fine: a different outfit, a hidden tattoo, missing accessories, a changed pose,
-small background differences, a missing or different pointer stick.
+small background differences, a small or unclear pointer stick, framing a little closer or a little wider (as long as her feet are not shown).
 
 Answer with JSON only, nothing else: {"ok": true} or {"ok": false, "reason": "<letter>: <short reason>"}"""
 
