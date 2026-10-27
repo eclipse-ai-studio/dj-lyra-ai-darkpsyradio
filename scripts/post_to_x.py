@@ -15,7 +15,12 @@ Requires env vars: X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRE
 
 Usage:
     python scripts/post_to_x.py "message text here"
+    python scripts/post_to_x.py "message text here" --image data/weekly_post.jpg
+
+With --image, the picture is uploaded and attached. If the upload fails,
+the message is still posted, without the picture.
 """
+import base64
 import os
 import sys
 
@@ -23,6 +28,22 @@ import requests
 from requests_oauthlib import OAuth1
 
 X_POST_URL = "https://api.x.com/2/tweets"
+X_MEDIA_URL = "https://api.x.com/2/media/upload"
+
+
+def upload_image(path: str, auth) -> str | None:
+    """Upload a picture and return its media id, or None if it didn't work."""
+    try:
+        with open(path, "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        r = requests.post(X_MEDIA_URL, auth=auth, json={"media": data, "media_category": "tweet_image"}, timeout=120)
+        if r.status_code not in (200, 201):
+            print(f"Image upload failed ({r.status_code} {r.text[:300]}); posting without the picture.")
+            return None
+        return r.json()["data"]["id"]
+    except Exception as e:
+        print(f"Image upload failed ({type(e).__name__}: {e}); posting without the picture.")
+        return None
 
 
 def main():
@@ -31,6 +52,10 @@ def main():
         sys.exit(1)
 
     message = sys.argv[1]
+    image_path = None
+    if "--image" in sys.argv:
+        i = sys.argv.index("--image")
+        image_path = sys.argv[i + 1] if i + 1 < len(sys.argv) else None
 
     api_key = os.environ.get("X_API_KEY")
     api_secret = os.environ.get("X_API_SECRET")
@@ -56,12 +81,13 @@ def main():
         resource_owner_secret=access_token_secret,
     )
 
-    response = requests.post(
-        X_POST_URL,
-        auth=auth,
-        json={"text": message, "made_with_ai": True},
-        timeout=30,
-    )
+    body = {"text": message, "made_with_ai": True}
+    if image_path:
+        media_id = upload_image(image_path, auth)
+        if media_id:
+            body["media"] = {"media_ids": [media_id]}
+
+    response = requests.post(X_POST_URL, auth=auth, json=body, timeout=30)
 
     if response.status_code not in (200, 201):
         print(f"Failed to post to X: {response.status_code} {response.text}")
