@@ -71,7 +71,7 @@ jobs:
           #DarkpsyRadio #AIDJ #Psytrance"
           # up to 3 tries, 1 minute apart. If X says "duplicate", an earlier try did go out: that counts as done.
           for i in 1 2 3; do
-            OUT=$(python scripts/post_to_x.py "$MSG" 2>&1) && { echo "$OUT"; exit 0; }
+            OUT=$(python scripts/post_to_x.py "$MSG" --image data/weekly_post.jpg 2>&1) && { echo "$OUT"; exit 0; }
             echo "$OUT"
             if echo "$OUT" | grep -qi "duplicate"; then echo "Already posted (duplicate). Done."; exit 0; fi
             [ "$i" -lt 3 ] && sleep 60
