@@ -146,8 +146,12 @@ Rules:
 - No words, letters, numbers or logos printed on the clothes.
 - No hats or helmets that hide her purple bob hair, no masks or glasses covering her eyes.
 - Expression: a cheerful, friendly one (smile, wink, laugh, excited, shy, confident, dreamy...), different from the recent ones.
-- Pose: {pose}. She must hold the black cat pointer stick
-  (pointing at the hologram, at a planet, at the viewer, twirling it, resting it on her shoulder, etc.). Different from the recent ones.
+  One short phrase, at most 12 words.
+- Pose: {pose}. Describe only her upper body, arms, hands and head, in one short sentence (at most 25 words).
+  Never mention her legs, feet, knees, weight, stance or walking.
+- The black cat pointer stick: she always holds it so that the cat face at its tip is clearly visible
+  (pointing it at the hologram, at a planet or at the viewer, or holding it up beside her face or shoulder).
+  Never twirl it, spin it, hold it behind her or hide the tip. Vary the pose from the recent ones.
 
 Recent looks (do NOT repeat or closely copy any of them):
 {recent}
@@ -161,7 +165,8 @@ no lingerie-like, bra-like or see-through tops.
 {shot}"""
 
 SIGNATURE_TASK = """Today is the 1st of the month: she wears her signature outfit (already decided, do not design an outfit).
-Design only today's expression and pose."""
+Design only today's expression and pose.
+{shot}"""
 
 
 def fallback_look(recent: list[dict], signature: bool = False) -> dict:
@@ -185,7 +190,7 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False) -> d
         return fallback_look(recent, signature)
     b = BASES[base]
     if signature:
-        task = SIGNATURE_TASK
+        task = SIGNATURE_TASK.format(shot=b["shot"].split(", so ")[0] + ".")
         answer = '{"expression": "...", "pose": "..."}'
         need = ("expression", "pose")
     else:
@@ -298,6 +303,7 @@ E. The scene is no longer the spaceship studio with the solar system hologram.
 F. {too_wide}
 G. Her signature prop is wrong: she is not holding the pointer stick, or there is no black cat face at the tip of the stick
    (a plain stick, a ball, a star or anything else at the tip = fail). The cat face may be small, but it must be recognizable as a black cat's face.
+   Judge only image 2 for this; do not compare the stick's shape or length with image 1.
 
 Everything else is fine: a different outfit, a hidden tattoo, missing accessories, a changed pose,
 small background differences, framing a little closer or a little wider (as long as rule F is kept).
