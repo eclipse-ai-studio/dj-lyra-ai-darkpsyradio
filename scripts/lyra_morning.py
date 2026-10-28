@@ -32,8 +32,10 @@ DJ Lyra Ai - Morning post (around 07:00 JST, "宇宙天気予報")
   post is out, later runs do nothing, so it never posts twice.
 
 - Picture (2026-10): each morning a "宇宙天気予報お姉さん" picture of Lyra is
-  made (scripts/lyra_image.py) and attached. If no picture can be made (or its
-  upload fails), the base picture (data/morning_base.jpg) is attached instead.
+  made (scripts/lyra_image.py) and attached. It starts from one of 4 base
+  pictures (a different one from yesterday's); on the 1st of every month she
+  wears her signature purple outfit. If no picture can be made (or its
+  upload fails), that day's base picture is attached instead.
   Key / credit / verification trouble is emailed once a day.
 
 Usage:
@@ -242,9 +244,19 @@ def image_test():
     from pathlib import Path
     out = Path("output")
     out.mkdir(exist_ok=True)
-    recent = c.load_state().get("recent_image_looks", [])
+    st = c.load_state()
+    recent = st.get("recent_image_looks", [])
+    args = sys.argv[1:]
+    # --base N: test one base (1-4); otherwise a random one (not yesterday's)
     try:
-        img, look, log = lyra_image.make_morning_image(recent)
+        base = int(args[args.index("--base") + 1])
+        assert base in lyra_image.BASES
+    except (ValueError, IndexError, AssertionError):
+        base = lyra_image.pick_base(st.get("last_image_base"))
+    # --signature: test the 1st-of-the-month signature outfit
+    signature = "--signature" in args or lyra_image.is_signature_day(c.today_jst())
+    try:
+        img, look, log = lyra_image.make_morning_image(recent, base, signature)
     except lyra_image.ImageFatal as e:
         log, img, look = [f"FATAL: {e}"], None, None
     report = "\n".join(log) + (f"\n\nlook: {look}" if look else "\n\nno picture passed")
@@ -362,10 +374,14 @@ def main():
     record = {"kind": "morning", "date": date, "text": post, "context": "\n".join(context)}
 
     # --- picture: made before the "posting" flag (it takes a few minutes)
+    # one of the 4 base pictures, never the same as yesterday's; the 1st of the month = signature outfit
     image, look, image_problem = None, None, None
+    base = lyra_image.pick_base(c.load_state().get("last_image_base"))
+    signature = lyra_image.is_signature_day(date)
     if os.environ.get("OPENAI_API_KEY"):
         try:
-            image, look, log = lyra_image.make_morning_image(c.load_state().get("recent_image_looks", []))
+            image, look, log = lyra_image.make_morning_image(
+                c.load_state().get("recent_image_looks", []), base, signature)
             print("[image]\n" + "\n".join(log))
             if not image:
                 print("[image] no picture passed the check; using the base picture")
@@ -378,10 +394,10 @@ def main():
     state = c.begin_post("morning", record, force)
     if state is None:
         return
-    # today's picture if there is one; otherwise (or if its upload fails) the base picture;
+    # today's picture if there is one; otherwise (or if its upload fails) the day's base picture;
     # only if even that can't be uploaded does the post go out without a picture
     media_ids, used_todays = None, False
-    for pic, name in ((image, "today's picture"), (lyra_image.BASE_IMAGE.read_bytes(), "base picture")):
+    for pic, name in ((image, "today's picture"), (lyra_image.base_bytes(base), f"base picture {base}")):
         if not pic:
             continue
         try:
@@ -414,8 +430,11 @@ def main():
         state.setdefault("recent_morning_lines", []).append(line)
         if line_kind.startswith("fixed"):
             c.remember_fixed(state, "morning", line, texts["morning_encouragement"])
+    state["last_image_base"] = base
     if used_todays and look:
         keep = {k: look[k] for k in ("outfit", "expression", "pose")}
+        if signature:
+            keep["outfit"] = "signature outfit (1st of the month)"
         state["recent_image_looks"] = (state.get("recent_image_looks", []) + [keep])[-lyra_image.RECENT_LOOKS:]
     c.finish_post(state, "morning", tweet_id)
     print(f"[post] OK id={tweet_id}" + (" (today's picture)" if used_todays else " (base picture)" if media_ids else " (no picture)"))
