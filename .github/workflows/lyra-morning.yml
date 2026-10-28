@@ -14,6 +14,15 @@ on:
         description: "Image test: only make today's picture and save it under Artifacts (nothing is posted)"
         type: boolean
         default: false
+      test_base:
+        description: "Image test only: which base picture (random = not yesterday's)"
+        type: choice
+        options: [random, "1", "2", "3", "4"]
+        default: random
+      test_signature:
+        description: "Image test only: signature outfit (the 1st-of-the-month picture)"
+        type: boolean
+        default: false
   schedule:
     # The real timer is cron-job.org (07:00 / 07:30 / 08:00 JST), which starts
     # this workflow like the "Run workflow" button. GitHub's own timer stopped
@@ -51,7 +60,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         # cron-job.org sends dry_run as the text "false"; the button sends true/false.
         # Only a real "yes" (true or "true") makes it a test.
-        run: python scripts/lyra_morning.py ${{ (inputs.dry_run == true || inputs.dry_run == 'true') && '--dry-run' || '' }} ${{ (inputs.force == true || inputs.force == 'true') && '--force' || '' }} ${{ (inputs.image_test == true || inputs.image_test == 'true') && '--image-test' || '' }}
+        run: python scripts/lyra_morning.py ${{ (inputs.dry_run == true || inputs.dry_run == 'true') && '--dry-run' || '' }} ${{ (inputs.force == true || inputs.force == 'true') && '--force' || '' }} ${{ (inputs.image_test == true || inputs.image_test == 'true') && '--image-test' || '' }} ${{ (inputs.test_base != '' && inputs.test_base != 'random') && format('--base {0}', inputs.test_base) || '' }} ${{ (inputs.test_signature == true || inputs.test_signature == 'true') && '--signature' || '' }}
 
       - name: Keep the test picture (image test only)
         if: always() && (inputs.image_test == true || inputs.image_test == 'true')
