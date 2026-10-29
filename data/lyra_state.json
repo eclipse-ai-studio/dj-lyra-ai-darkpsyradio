@@ -90,6 +90,12 @@
    "date": "2026-10-29",
    "text": "受信ログに、同じパターンの信号がふたつ重なっていることに気づきました。ひとつずつ分けて聴いてみます。",
    "context": ""
+  },
+  "2115926998971498532": {
+   "kind": "morning",
+   "date": "2026-10-30",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: R1-R2 1% / R3 1%\n磁気嵐: なし\n月: 満月後🌖\n\n良いことがありますように。",
+   "context": "今日の太陽フレア予報（NOAA）: R1-R2 1%、R3 1%\n今日の磁気嵐予報（NOAA）: 最大Kp 4.33 → G1未満（なし）\n今日の月: 満月後🌖"
   }
  },
  "recent_notices": [
@@ -130,7 +136,8 @@
   "無理せずいきましょう。",
   "今日も一日、小さな喜びを大事にしてください。",
   "今日も一日、ていねいに。",
-  "深呼吸してからいきましょう。"
+  "深呼吸してからいきましょう。",
+  "良いことがありますように。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -151,7 +158,8 @@
    "今日も一日、お互いがんばりましょう。",
    "無理せずいきましょう。",
    "今日も一日、ていねいに。",
-   "深呼吸してからいきましょう。"
+   "深呼吸してからいきましょう。",
+   "良いことがありますように。"
   ],
   "evening": [
    "鳩がこっち見てる。",
@@ -162,7 +170,7 @@
   ]
  },
  "fixed_last": {
-  "morning": "深呼吸してからいきましょう。",
+  "morning": "良いことがありますように。",
   "evening": "カラスが賢そう。"
  },
  "last_mention_id": "2115668992828579869",
@@ -200,7 +208,7 @@
  "claims": {
   "morning": {
    "date": "2026-10-30",
-   "status": "posting",
+   "status": "done",
    "at": "2026-10-30T07:01:21+09:00",
    "post": {
     "kind": "morning",
@@ -241,7 +249,12 @@
    "outfit": "A sleeveless racerback tank top in bright neon lime green with a subtle textured mesh panel across the chest and a modest crew neckline, layered under a cropped short-sleeve jacket in soft pastel lavender with a fuzzy knit texture and silver zipper details. Dual thin silver rings on her left hand and a cute minimalist white porcelain cat charm bracelet on her right wrist.",
    "expression": "Playful laugh with sparkling eyes and an excited, open-mouthed smile full of energy and joy",
    "pose": "Head tilted slightly to the right with a animated, enthusiastic expression, holding the black cat pointer stick vertically beside her right shoulder with the cat face pointing playfully toward the viewer, her right arm relaxed and her left hand raised at chest level in a bright, welcoming gesture"
+  },
+  {
+   "outfit": "A sleeveless mock-neck bodysuit in rich cobalt blue with subtle ribbed texture, paired with a high-waisted mini skirt in soft peachy-pink satin with a gentle A-line silhouette. An oversized cropped denim jacket in light vintage wash worn open. Layered delicate gold bracelets on her left wrist and a single statement ring with a small amethyst stone on her right hand.",
+   "expression": "Soft, confident smile with a relaxed, dreamy gaze and a subtle head tilt—present and peaceful",
+   "pose": "Standing with natural, centered posture and her shoulders relaxed, holding the black cat pointer stick angled downward toward the lower planets in the hologram, her right arm extended gently in an informative gesture while her left arm rests naturally at her side"
   }
  ],
- "last_image_base": 3
+ "last_image_base": 2
 }
