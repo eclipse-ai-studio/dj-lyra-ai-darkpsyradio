@@ -1,6 +1,6 @@
 name: Publish Mix
 on:
-  workflow_dispatch:  # started by cron-job.org every Saturday 04:00 JST (and for manual runs)
+  workflow_dispatch:  # started by cron-job.org every Saturday 03:00 JST (and for manual runs)
   # GitHub's own timer was removed: it stopped starting workflows reliably
   # (2026-09-30〜). cron-job.org starts this instead. Don't add it back.
 jobs:
