@@ -90,6 +90,12 @@
    "date": "2026-10-30",
    "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VTMZF\n#DarkpsyRadio #AIDJ #Psytrance https://t.co/3iM3AmCgRt",
    "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
+  },
+  "2116289383812800818": {
+   "kind": "morning",
+   "date": "2026-10-31",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: M級 1% / X級 1%\n磁気嵐: G1\n月: 満月後🌖\n\nがんばりすぎないようにしてください。",
+   "context": "今日の太陽フレア予報（NOAA）: M級（R1-R2） 1%、X級（R3以上） 1%\n今日の磁気嵐予報（NOAA）: 最大Kp 5.00 → G1\n今日の月: 満月後🌖"
   }
  },
  "recent_notices": [
@@ -132,7 +138,8 @@
   "今日も一日、小さな喜びを大事にしてください。",
   "今日も一日、ていねいに。",
   "深呼吸してからいきましょう。",
-  "良いことがありますように。"
+  "良いことがありますように。",
+  "がんばりすぎないようにしてください。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -154,7 +161,8 @@
    "無理せずいきましょう。",
    "今日も一日、ていねいに。",
    "深呼吸してからいきましょう。",
-   "良いことがありますように。"
+   "良いことがありますように。",
+   "がんばりすぎないようにしてください。"
   ],
   "evening": [
    "鳩がこっち見てる。",
@@ -165,7 +173,7 @@
   ]
  },
  "fixed_last": {
-  "morning": "良いことがありますように。",
+  "morning": "がんばりすぎないようにしてください。",
   "evening": "カラスが賢そう。"
  },
  "last_mention_id": "2116229759986467067",
@@ -212,7 +220,7 @@
  "claims": {
   "morning": {
    "date": "2026-10-31",
-   "status": "posting",
+   "status": "done",
    "at": "2026-10-31T07:01:20+09:00",
    "post": {
     "kind": "morning",
@@ -258,7 +266,12 @@
    "outfit": "A sleeveless mock-neck bodysuit in rich cobalt blue with subtle ribbed texture, paired with a high-waisted mini skirt in soft peachy-pink satin with a gentle A-line silhouette. An oversized cropped denim jacket in light vintage wash worn open. Layered delicate gold bracelets on her left wrist and a single statement ring with a small amethyst stone on her right hand.",
    "expression": "Soft, confident smile with a relaxed, dreamy gaze and a subtle head tilt—present and peaceful",
    "pose": "Standing with natural, centered posture and her shoulders relaxed, holding the black cat pointer stick angled downward toward the lower planets in the hologram, her right arm extended gently in an informative gesture while her left arm rests naturally at her side"
+  },
+  {
+   "outfit": "A short-sleeve crop top in rich burgundy satin with a modest boat neckline and subtle ruching detail, layered under a sleeveless oversized vest in soft charcoal gray wool with a relaxed open front. Delicate silver hoop earrings and a chunky rose gold cuff bracelet stacked with thin silver bands on her left wrist.",
+   "expression": "Shy, delighted smile with a subtle blush and a warm, approachable gaze",
+   "pose": "Head tilted playfully to the left with shoulders slightly raised in an excited shrug, holding the black cat pointer stick diagonally upward toward the right with the cat face pointing cheerfully at the viewer, her right elbow bent naturally."
   }
  ],
- "last_image_base": 2
+ "last_image_base": 3
 }
