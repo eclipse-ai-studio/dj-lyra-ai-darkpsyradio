@@ -3,7 +3,7 @@
 DJ Lyra Ai - Morning post (around 07:00 JST, "宇宙天気予報")
 ======================================================
     今日の宇宙天気予報☀️
-    太陽フレア: R1-R2 ◯% / R3 ◯%
+    太陽フレア: M級 ◯% / X級 ◯%   (M級 = NOAA R1-R2, X級 = R3 or more)
     磁気嵐: G1〜G5 / なし
     月: 満月🌕（スーパームーン）
     流星群: ◯◯流星群（極大・北半球向き）   <- only on peak days (data/sky.json)
@@ -215,7 +215,7 @@ def pick_line(fixed: list[str], recent: list[str], fresh: list[str]) -> tuple[st
 def build_forecast(flare, storm, moon: str | None, meteor: dict | None) -> str:
     lines = []
     if flare:
-        lines.append(f"太陽フレア: R1-R2 {flare[0]}% / R3 {flare[1]}%")
+        lines.append(f"太陽フレア: M級 {flare[0]}% / X級 {flare[1]}%")  # M級 = R1-R2, X級 = R3+
     if storm is not None:
         lines.append(f"磁気嵐: {'G' + str(storm[0]) if storm[0] else 'なし'}")
     if moon:
@@ -355,7 +355,7 @@ def main():
 
     context = []
     if flare:
-        context.append(f"今日の太陽フレア予報（NOAA）: R1-R2 {flare[0]}%、R3 {flare[1]}%")
+        context.append(f"今日の太陽フレア予報（NOAA）: M級（R1-R2） {flare[0]}%、X級（R3以上） {flare[1]}%")
     if storm is not None:
         context.append(f"今日の磁気嵐予報（NOAA）: 最大Kp {storm[1]:.2f} → {'G' + str(storm[0]) if storm[0] else 'G1未満（なし）'}")
     if moon:
