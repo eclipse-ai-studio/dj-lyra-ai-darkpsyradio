@@ -4,7 +4,7 @@ DJ Lyra Ai - Upload weekly mix to Internet Archive
 =====================================================
 1. Uploads output/weekly_mix.mp3 to Internet Archive (permanent, free storage),
    marked noindex so it doesn't show up in Archive.org search results before
-   the Doctor has had a chance to check it / it gets published on the official site
+   The Doctor has had a chance to check it / it gets published on the official site
 2. Appends the new mix's info to docs/mixes.json, flagged as unpublished
    (a separate publish step decides when it actually goes live, and sets the
    final public-facing title using the publish date)

@@ -8,7 +8,7 @@ Makes the picture for the morning space-weather post.
   different composition. Every day one is picked, never the same as yesterday's:
     1 data/morning_base.jpg    knee-up, she stands on the left
     2 data/morning_base_2.jpg  knee-up, she stands on the right
-    3 data/morning_base_3.jpg  knee-up, she stands in the center, hologram behind her
+    3 data/morning_base_3.jpg  high angle from above, she stands on the left (window with Earth behind her)
     4 data/morning_base_4.jpg  behind the broadcast desk (waist down hidden)
   Same studio, hologram, art style and face; the day's base decides the
   framing. Only her outfit, expression and pose change. She always holds
@@ -58,8 +58,7 @@ CLAUDE_URL = "https://api.anthropic.com/v1/messages"
 CHECK_MODEL = os.environ.get("LYRA_CHECK_MODEL", "claude-haiku-4-5-20251001")
 
 
-# The 4 base images. (Base 3 was a chest-up close-up until 2026-10-31; hands came out badly, so it was
-# replaced by a knee-up center composition.) "shot" goes into the stylist prompt, "framing" into the image
+# The 4 base images (all 4 redrawn in a brighter neon style on 2026-11-03). "shot" goes into the stylist prompt, "framing" into the image
 # prompt, "too_wide" is the checker's rule F for that composition.
 BASES = {
     1: {
@@ -84,12 +83,12 @@ BASES = {
     },
     3: {
         "file": ROOT / "data" / "morning_base_3.jpg",
-        "shot": "The picture shows her from the knees up, standing in the center in front of the hologram, "
+        "shot": "The picture is taken from a high angle above her, showing her from the knees up on the left side, "
                 "so do not mention shoes, boots or socks below the knee: focus on tops, jackets, dresses, "
                 "skirts or pants, and accessories.",
         "pose": "a natural presenter pose for a knee-up shot (no full-body or leg poses, no sitting, no jumping)",
-        "framing": "She is shown from the knees up (a knee-up shot), standing in the CENTER of the frame, "
-                   "with the large hologram spreading behind her across the whole background. "
+        "framing": "The camera looks down at her from a high angle. She stands on the LEFT side, shown from "
+                   "the knees up, with the window showing the Earth behind her and the hologram on the right. "
                    "Do not zoom out. Her feet and shoes must not be visible.",
         "too_wide": "The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.",
     },
@@ -163,7 +162,7 @@ Answer with JSON only: {answer}"""
 NEW_OUTFIT_TASK = """Design today's look. Make the outfit completely new: a different style, colors and items from every recent look below.
 Be specific and fashionable (2-4 items, colors, materials). Short skirts and bare shoulders are fine.
 It is a morning show and she is cute and stylish, never sexy: no plunging or deep V necklines, no cleavage,
-no lingerie-like, bra-like or see-through tops.
+no lingerie-like, bra-like or see-through tops. Do not describe her body or figure; only describe the clothes.
 {shot}"""
 
 SIGNATURE_TASK = """Today is the 1st of the month: she wears her signature outfit (already decided, do not design an outfit).
@@ -247,7 +246,9 @@ def build_prompt(look: dict, base: int = 1, signature: bool = False) -> str:
         "Use the attached image as the base. Keep the same character, the same futuristic "
         "spaceship broadcast studio background, the same holographic solar system map, "
         "the same anime art style and lighting. Keep her face, purple bob hair, "
-        "yellow eyes, piercings and headset microphone exactly the same.\n\n"
+        "yellow eyes, piercings and headset microphone exactly the same. "
+        "Keep her body shape and proportions exactly the same as the base image: the same slim build "
+        "and the same bust size. The new outfit must not change her figure.\n\n"
         "Framing: keep exactly the same camera distance, angle and 16:9 framing as the base image. "
         f"{BASES[base]['framing']}\n\n"
         + change + items +
