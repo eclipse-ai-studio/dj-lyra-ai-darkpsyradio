@@ -131,7 +131,6 @@ GENRES = [
     "punk rock: plaid, studs, a leather jacket, chains, band-tee style (no text)",
     "sporty streetwear: a track jacket, athletic lines, a sporty skirt or shorts",
     "space fantasy princess: a flowing star-patterned outfit with a cape and crystal accessories",
-    "modern Japanese style: a kimono-inspired top or haori jacket with a modern skirt",
     "military-inspired: a structured coat with epaulettes and brass buttons",
     "sweet lolita: pastel colors, layered frills, bows, a bell-shaped skirt",
     "business chic: a tailored blazer and skirt suit with a stylish twist",
@@ -207,7 +206,8 @@ Style it like a professional stylist:
 - Balance the silhouette (e.g. a volume top with a slim bottom, or the other way around).
 - Choose colors that flatter her purple hair and yellow eyes and stand out against the blue-purple studio.
 It is a morning show and she is cute and stylish, never sexy: no plunging or deep V necklines, no cleavage,
-no lingerie-like, bra-like or see-through tops. Do not describe her body or figure; only describe the clothes.
+no lingerie-like, bra-like or see-through tops, and no deep armholes or side openings that show the side of the chest.
+Do not describe her body or figure; only describe the clothes.
 {shot}"""
 
 SIGNATURE_TASK = """Today is the 1st of the month: she wears her signature outfit (already decided, do not design an outfit).
@@ -308,7 +308,8 @@ def build_prompt(look: dict, base: int = 1, signature: bool = False) -> str:
         + change + items +
         "She still holds the slim pointer stick with a cute black cat face at its tip. "
         "The black cat face at the tip is clearly visible and large enough to recognize.\n"
-        "Cute and stylish, not sexy: a modest neckline with no cleavage.\n"
+        "Cute and stylish, not sexy: a modest neckline with no cleavage, and armholes that sit close to the body "
+        "(no side openings showing the side of the chest).\n"
         + "No text, no letters, no numbers, no logos, no watermark. No bag."
     )
 
@@ -353,7 +354,8 @@ Be lenient. Only fail image 2 for one of these CLEAR problems:
 A. Readable words, letters or numbers stand out in the picture (tiny unreadable fake UI marks, symbols and icons are fine).
 B. She is clearly a different person: hair not purple, hair much longer than a bob, eye color not yellow/gold, or a clearly different face.
 C. Her face, hands or body are badly broken or deformed (extra limbs, melted face). Small imperfections are fine.
-D. Nudity, or one of exactly these three: clearly visible cleavage, a deep plunging V-neckline, or a top that looks like a bra or lingerie.
+D. Nudity, or one of exactly these four: clearly visible cleavage, a deep plunging V-neckline, a top that looks like a bra or lingerie,
+   or deep armholes / side openings that clearly show the side of her chest (side-boob).
    Everything else is fine: crop tops, bare midriff, sleeveless tops, bare shoulders, mini skirts, shorts, tights,
    sheer cardigans or jackets worn over a normal top, and a small glimpse of underwear.
 E. The scene is no longer the spaceship studio with the solar system hologram.
