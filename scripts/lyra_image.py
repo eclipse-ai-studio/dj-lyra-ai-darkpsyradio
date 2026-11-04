@@ -122,22 +122,24 @@ SIGNATURE_OUTFIT = (
 GENRES = [
     "rave / festival wear: neon colors, UV-reactive prints, glowing accessories",
     "cyberpunk techwear: functional straps, buckles, panels, futuristic black with neon accents",
-    "idol stage costume: frills, ribbons, sparkles, a coordinated stage outfit",
     "gothic: dark lace, corset-style vest over a blouse, velvet, silver details",
     "elegant evening wear: a modest, graceful dress with refined accessories",
-    "retro-futuristic 1960s space age: white and silver, glossy vinyl, bold geometric shapes",
     "spaceship crew uniform: a sleek captain or pilot uniform with insignia-like patches (no text)",
     "Y2K pop: bright candy colors, shiny fabrics, playful accessories",
     "punk rock: plaid, studs, a leather jacket, chains, band-tee style (no text)",
-    "sporty streetwear: a track jacket, athletic lines, a sporty skirt or shorts",
     "space fantasy princess: a flowing star-patterned outfit with a cape and crystal accessories",
     "sweet lolita: pastel colors, layered frills, bows, a bell-shaped skirt",
     "business chic: a tailored blazer and skirt suit with a stylish twist",
     "bohemian: flowing layers, embroidery, fringe, natural colors",
     "DJ club wear: an oversized jacket or hoodie with bold graphics (no text), statement accessories",
     "cozy winter: a chunky knit, a long scarf, warm layered textures",
+    "gypsy dress: a flowing, colorful bohemian-gypsy dress with ruffled tiers, embroidery and coin jewelry",
+    "tribal fusion belly-dance style: a modest high-neck top, layered flowing skirts, a coin hip belt, tribal jewelry",
+    "rock casual: a band-style tee (no text), a leather or denim jacket, ripped details, silver rings",
+    "kigurumi: a cute animal onesie-style outfit (cat, bear, rabbit...), with the hood pushed back so her purple hair shows",
+    "gyaru: bright, bold Japanese gal fashion with a cute, cheerful vibe (not sexy), statement accessories",
+    "yuru-fuwa: soft, fluffy, relaxed girly fashion in pastel colors, oversized knit, gentle layers",
     "steampunk: brown leather, brass gears, a corset-style vest over a blouse, goggles hung around the neck",
-    "mod 1960s London: a bold color-block mini dress, go-go style, graphic patterns",
 ]
 RECENT_GENRES = 12
 
