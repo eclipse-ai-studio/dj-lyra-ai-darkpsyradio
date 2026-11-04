@@ -194,6 +194,7 @@ Rules:
 Recent looks (do NOT repeat or closely copy any of them):
 {recent}
 
+Keep it short: outfit at most 60 words, expression at most 12 words, pose at most 25 words.
 Answer with JSON only: {answer}"""
 
 NEW_OUTFIT_TASK = """Design today's look in today's style theme: {genre}.
@@ -247,38 +248,40 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False, genr
         f"- outfit: {r.get('outfit')} | expression: {r.get('expression')} | pose: {r.get('pose')}"
         for r in recent[-RECENT_LOOKS:]
     ) or "(none yet)"
-    try:
-        r = None
-        for model in dict.fromkeys((DESIGN_MODEL, CHECK_MODEL)):  # stronger model first
+    errors = []
+    for model in dict.fromkeys((DESIGN_MODEL, CHECK_MODEL)):  # stronger model first, then the check model
+        try:
             r = requests.post(
                 CLAUDE_URL,
                 headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-                json={"model": model, "max_tokens": 400, "temperature": 1.0,
+                json={"model": model, "max_tokens": 600, "temperature": 1.0,
                       "messages": [{"role": "user", "content": prompt.replace("{recent}", lines)}]},
                 timeout=60,
             )
-            if r.status_code == 200:
-                break
-            print(f"[image] design with {model} failed (Claude {r.status_code}: {r.text[:150]})")
-        if r.status_code != 200:
-            raise RuntimeError(f"Claude {r.status_code}: {r.text[:200]}")
-        text = "".join(b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text")
-        m = re.search(r"\{.*\}", text, re.S)
-        look = json.loads(m.group(0)) if m else {}
-        look = {k: str(look.get(k, "")).strip() for k in need}
-        if not all(look.values()) or any(len(v) > 400 for v in look.values()):
-            raise ValueError(f"unusable answer: {text[:200]}")
-        if signature:
-            look["outfit"] = SIGNATURE_OUTFIT
-        elif re.search(r"\b(bag|backpack|fanny pack|purse)\b", look["outfit"], re.I):
-            raise ValueError(f"outfit has a bag: {look['outfit']}")
-        look["by"] = "claude"
-        if genre and not signature:
-            look["genre"] = genre
-        return look
-    except Exception as e:
-        print(f"[image] Claude could not design a look ({type(e).__name__}: {e}); using the fallback list")
-        return fallback_look(recent, signature)
+            if r.status_code != 200:
+                raise RuntimeError(f"Claude {r.status_code}: {r.text[:200]}")
+            text = "".join(b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text")
+            m = re.search(r"\{.*\}", text, re.S)
+            look = json.loads(m.group(0)) if m else {}
+            look = {k: str(look.get(k, "")).strip() for k in need}
+            if not all(look.values()) or any(len(v) > 900 for v in look.values()):
+                raise ValueError(f"unusable answer: {text[:200]}")
+            if signature:
+                look["outfit"] = SIGNATURE_OUTFIT
+            elif re.search(r"\b(bag|backpack|fanny pack|purse)\b", look["outfit"], re.I):
+                raise ValueError(f"outfit has a bag: {look['outfit'][:150]}")
+            look["by"] = model
+            if genre and not signature:
+                look["genre"] = genre
+            if errors:
+                look["note"] = "; ".join(errors)
+            return look
+        except Exception as e:
+            errors.append(f"{model}: {type(e).__name__}: {str(e)[:200]}")
+            print(f"[image] design with {model} failed ({errors[-1]})")
+    look = fallback_look(recent, signature)
+    look["note"] = "; ".join(errors)
+    return look
 
 
 def build_prompt(look: dict, base: int = 1, signature: bool = False) -> str:
@@ -442,6 +445,8 @@ def make_morning_image(recent: list[dict], base: int = 1, signature: bool = Fals
         ok, reason = check(image, base, signature)
         outfit = "signature outfit" if signature else f"[{genre.split(':')[0]}] {look['outfit']}"
         log.append(f"[{attempt}] ({look['by']}) {outfit} / {look['expression']} / {look['pose']} -> {reason}")
+        if look.get("note"):
+            log.append(f"    design note: {look['note']}")
         if ok:
             return image, look, log
     return None, None, log
