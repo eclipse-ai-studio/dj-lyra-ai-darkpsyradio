@@ -142,6 +142,10 @@ GENRES = [
 RECENT_GENRES = 12
 
 
+SHOE_WORDS = re.compile(r"\b(shoes?|boots?|booties|sneakers?|trainers?|heels?|high-heels?|platforms?|platform-soles?|"
+                        r"sandals?|loafers?|pumps|mules|clogs|footwear|socks?|ankle)\b", re.I)
+
+
 def pick_genre(recent: list[dict], tried: list[str]) -> str:
     """A theme not used in the last RECENT_GENRES looks, nor already tried today."""
     used = {r.get("genre") for r in recent[-RECENT_GENRES:]} | set(tried)
@@ -249,13 +253,15 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False, genr
         for r in recent[-RECENT_LOOKS:]
     ) or "(none yet)"
     errors = []
-    for model in dict.fromkeys((DESIGN_MODEL, CHECK_MODEL)):  # stronger model first, then the check model
+    tries = [(m, n) for m in dict.fromkeys((DESIGN_MODEL, CHECK_MODEL)) for n in range(2)]  # stronger model first
+    extra = ""
+    for model, n in tries:
         try:
             r = requests.post(
                 CLAUDE_URL,
                 headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
                 json={"model": model, "max_tokens": 600, "temperature": 1.0,
-                      "messages": [{"role": "user", "content": prompt.replace("{recent}", lines)}]},
+                      "messages": [{"role": "user", "content": prompt.replace("{recent}", lines) + extra}]},
                 timeout=60,
             )
             if r.status_code != 200:
@@ -270,6 +276,11 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False, genr
                 look["outfit"] = SIGNATURE_OUTFIT
             elif re.search(r"\b(bag|backpack|fanny pack|purse)\b", look["outfit"], re.I):
                 raise ValueError(f"outfit has a bag: {look['outfit'][:150]}")
+            elif not signature and SHOE_WORDS.search(look["outfit"]):
+                # shoes in the description tend to make the picture zoom out to full body
+                extra = ("\n\nYour last answer mentioned footwear. The picture never shows her feet: "
+                         "do not mention shoes, boots, sneakers, heels, platforms, sandals or socks at all.")
+                raise ValueError(f"outfit mentions footwear: {SHOE_WORDS.search(look['outfit']).group(0)}")
             look["by"] = model
             if genre and not signature:
                 look["genre"] = genre
