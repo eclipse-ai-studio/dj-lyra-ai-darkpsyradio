@@ -192,6 +192,9 @@ Rules:
 - The black cat pointer stick: she points it at the hologram (at the Sun, Saturn, the Earth or another planet)
   with her arm stretched out, like in the base image, so the cat face at its tip is clearly visible.
   Vary which planet she points at and what her other hand, head and shoulders do.
+- She is a friendly TV weather presenter: graceful, polished presenter gestures. Her free hand stays open and soft
+  (an open palm toward the hologram, a small wave, a hand lightly at her waist or near her chin).
+  No fists, no fist pumps or cheering arms, no arms thrown up, no dancing, no rough or sporty gestures.
   Never hold it upright beside her face, twirl it, spin it, hold it behind her or hide the tip.
 
 Recent looks (do NOT repeat or closely copy any of them):
