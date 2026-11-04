@@ -131,7 +131,6 @@ GENRES = [
     "punk rock: plaid, studs, a leather jacket, chains, band-tee style (no text)",
     "sporty streetwear: a track jacket, athletic lines, a sporty skirt or shorts",
     "space fantasy princess: a flowing star-patterned outfit with a cape and crystal accessories",
-    "military-inspired: a structured coat with epaulettes and brass buttons",
     "sweet lolita: pastel colors, layered frills, bows, a bell-shaped skirt",
     "business chic: a tailored blazer and skirt suit with a stylish twist",
     "bohemian: flowing layers, embroidery, fringe, natural colors",
@@ -186,9 +185,10 @@ Rules:
   One short phrase, at most 12 words.
 - Pose: {pose}. Describe only her upper body, arms, hands and head, in one short sentence (at most 25 words).
   Never mention her legs, feet, knees, weight, stance or walking.
-- The black cat pointer stick: she always holds it so that the cat face at its tip is clearly visible
-  (pointing it at the hologram, at a planet or at the viewer, or holding it up beside her face or shoulder).
-  Never twirl it, spin it, hold it behind her or hide the tip. Vary the pose from the recent ones.
+- The black cat pointer stick: she points it at the hologram (at the Sun, Saturn, the Earth or another planet)
+  with her arm stretched out, like in the base image, so the cat face at its tip is clearly visible.
+  Vary which planet she points at and what her other hand, head and shoulders do.
+  Never hold it upright beside her face, twirl it, spin it, hold it behind her or hide the tip.
 
 Recent looks (do NOT repeat or closely copy any of them):
 {recent}
