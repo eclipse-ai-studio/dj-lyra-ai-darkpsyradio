@@ -432,7 +432,7 @@ def main():
             c.remember_fixed(state, "morning", line, texts["morning_encouragement"])
     state["last_image_base"] = base
     if used_todays and look:
-        keep = {k: look[k] for k in ("outfit", "expression", "pose")}
+        keep = {k: look[k] for k in ("outfit", "expression", "pose", "genre") if k in look}
         if signature:
             keep["outfit"] = "signature outfit (1st of the month)"
         state["recent_image_looks"] = (state.get("recent_image_looks", []) + [keep])[-lyra_image.RECENT_LOOKS:]

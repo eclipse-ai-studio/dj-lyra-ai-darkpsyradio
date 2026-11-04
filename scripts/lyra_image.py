@@ -56,6 +56,9 @@ RECENT_LOOKS = 30            # Claude is shown the last 30 looks and must not re
 
 CLAUDE_URL = "https://api.anthropic.com/v1/messages"
 CHECK_MODEL = os.environ.get("LYRA_CHECK_MODEL", "claude-haiku-4-5-20251001")
+# The outfit is designed by a stronger model for better fashion sense (about 1 yen a call);
+# if it can't be used, the check model designs it instead.
+DESIGN_MODEL = os.environ.get("LYRA_DESIGN_MODEL", "claude-sonnet-5")
 
 
 # The 4 base images (all 4 redrawn in a brighter neon style on 2026-11-03). "shot" goes into the stylist prompt, "framing" into the image
@@ -114,6 +117,40 @@ SIGNATURE_OUTFIT = (
 )
 
 
+# Style themes. Every day one theme is picked (never one of the last RECENT_GENRES days),
+# so the looks don't drift into the same casual top-and-skirt every morning.
+GENRES = [
+    "rave / festival wear: neon colors, UV-reactive prints, glowing accessories",
+    "cyberpunk techwear: functional straps, buckles, panels, futuristic black with neon accents",
+    "idol stage costume: frills, ribbons, sparkles, a coordinated stage outfit",
+    "gothic: dark lace, corset-style vest over a blouse, velvet, silver details",
+    "elegant evening wear: a modest, graceful dress with refined accessories",
+    "retro-futuristic 1960s space age: white and silver, glossy vinyl, bold geometric shapes",
+    "spaceship crew uniform: a sleek captain or pilot uniform with insignia-like patches (no text)",
+    "Y2K pop: bright candy colors, shiny fabrics, playful accessories",
+    "punk rock: plaid, studs, a leather jacket, chains, band-tee style (no text)",
+    "sporty streetwear: a track jacket, athletic lines, a sporty skirt or shorts",
+    "space fantasy princess: a flowing star-patterned outfit with a cape and crystal accessories",
+    "modern Japanese style: a kimono-inspired top or haori jacket with a modern skirt",
+    "military-inspired: a structured coat with epaulettes and brass buttons",
+    "sweet lolita: pastel colors, layered frills, bows, a bell-shaped skirt",
+    "business chic: a tailored blazer and skirt suit with a stylish twist",
+    "bohemian: flowing layers, embroidery, fringe, natural colors",
+    "DJ club wear: an oversized jacket or hoodie with bold graphics (no text), statement accessories",
+    "cozy winter: a chunky knit, a long scarf, warm layered textures",
+    "steampunk: brown leather, brass gears, a corset-style vest over a blouse, goggles hung around the neck",
+    "mod 1960s London: a bold color-block mini dress, go-go style, graphic patterns",
+]
+RECENT_GENRES = 12
+
+
+def pick_genre(recent: list[dict], tried: list[str]) -> str:
+    """A theme not used in the last RECENT_GENRES looks, nor already tried today."""
+    used = {r.get("genre") for r in recent[-RECENT_GENRES:]} | set(tried)
+    choices = [g for g in GENRES if g not in used] or [g for g in GENRES if g not in tried] or GENRES
+    return random.choice(choices)
+
+
 def is_signature_day(date: str) -> bool:
     """date = 'YYYY-MM-DD' (Japan time). The 1st of every month."""
     return date.endswith("-01")
@@ -159,8 +196,15 @@ Recent looks (do NOT repeat or closely copy any of them):
 
 Answer with JSON only: {answer}"""
 
-NEW_OUTFIT_TASK = """Design today's look. Make the outfit completely new: a different style, colors and items from every recent look below.
+NEW_OUTFIT_TASK = """Design today's look in today's style theme: {genre}.
+The theme must be obvious at a glance; do not fall back to plain everyday basics (a simple knit top and skirt).
+Make the outfit completely new: a different style, colors and items from every recent look below.
 Be specific and fashionable (2-4 items, colors, materials). Short skirts and bare shoulders are fine.
+Style it like a professional stylist:
+- Limit the palette to 2-3 colors that work together, plus one accent color.
+- Pick one statement piece and let the other items support it.
+- Balance the silhouette (e.g. a volume top with a slim bottom, or the other way around).
+- Choose colors that flatter her purple hair and yellow eyes and stand out against the blue-purple studio.
 It is a morning show and she is cute and stylish, never sexy: no plunging or deep V necklines, no cleavage,
 no lingerie-like, bra-like or see-through tops. Do not describe her body or figure; only describe the clothes.
 {shot}"""
@@ -183,7 +227,7 @@ def fallback_look(recent: list[dict], signature: bool = False) -> dict:
     }
 
 
-def design_look(recent: list[dict], base: int = 1, signature: bool = False) -> dict:
+def design_look(recent: list[dict], base: int = 1, signature: bool = False, genre: str = "") -> dict:
     """Claude designs a brand-new outfit / expression / pose, unlike the recent ones.
     On signature days the outfit is fixed and Claude designs only expression and pose."""
     key = os.environ.get("ANTHROPIC_API_KEY")
@@ -195,7 +239,7 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False) -> d
         answer = '{"expression": "...", "pose": "..."}'
         need = ("expression", "pose")
     else:
-        task = NEW_OUTFIT_TASK.format(shot=b["shot"])
+        task = NEW_OUTFIT_TASK.format(shot=b["shot"], genre=genre or random.choice(GENRES))
         answer = '{"outfit": "...", "expression": "...", "pose": "..."}'
         need = ("outfit", "expression", "pose")
     prompt = DESIGN_PROMPT.format(task=task, pose=b["pose"], recent="{recent}", answer=answer)
@@ -204,13 +248,18 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False) -> d
         for r in recent[-RECENT_LOOKS:]
     ) or "(none yet)"
     try:
-        r = requests.post(
-            CLAUDE_URL,
-            headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-            json={"model": CHECK_MODEL, "max_tokens": 400, "temperature": 1.0,
-                  "messages": [{"role": "user", "content": prompt.replace("{recent}", lines)}]},
-            timeout=60,
-        )
+        r = None
+        for model in dict.fromkeys((DESIGN_MODEL, CHECK_MODEL)):  # stronger model first
+            r = requests.post(
+                CLAUDE_URL,
+                headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+                json={"model": model, "max_tokens": 400, "temperature": 1.0,
+                      "messages": [{"role": "user", "content": prompt.replace("{recent}", lines)}]},
+                timeout=60,
+            )
+            if r.status_code == 200:
+                break
+            print(f"[image] design with {model} failed (Claude {r.status_code}: {r.text[:150]})")
         if r.status_code != 200:
             raise RuntimeError(f"Claude {r.status_code}: {r.text[:200]}")
         text = "".join(b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text")
@@ -224,6 +273,8 @@ def design_look(recent: list[dict], base: int = 1, signature: bool = False) -> d
         elif re.search(r"\b(bag|backpack|fanny pack|purse)\b", look["outfit"], re.I):
             raise ValueError(f"outfit has a bag: {look['outfit']}")
         look["by"] = "claude"
+        if genre and not signature:
+            look["genre"] = genre
         return look
     except Exception as e:
         print(f"[image] Claude could not design a look ({type(e).__name__}: {e}); using the fallback list")
@@ -372,11 +423,14 @@ def make_morning_image(recent: list[dict], base: int = 1, signature: bool = Fals
     Raises ImageFatal if the key / credit / account is the problem."""
     log = [f"base {base}" + (" / signature outfit day" if signature else "")]
     started = time.monotonic()
+    tried = []
     for attempt in range(1, MAX_TRIES + 1):
         if time.monotonic() - started > TIME_BUDGET:
             log.append(f"time budget used up after {attempt - 1} tries")
             break
-        look = design_look(recent, base, signature)  # a new look every try
+        genre = "" if signature else pick_genre(recent, tried)  # a new theme and look every try
+        tried.append(genre)
+        look = design_look(recent, base, signature, genre)
         try:
             image = generate(build_prompt(look, base, signature), base)
         except ImageFatal:
@@ -386,7 +440,7 @@ def make_morning_image(recent: list[dict], base: int = 1, signature: bool = Fals
             time.sleep(5)
             continue
         ok, reason = check(image, base, signature)
-        outfit = "signature outfit" if signature else look["outfit"]
+        outfit = "signature outfit" if signature else f"[{genre.split(':')[0]}] {look['outfit']}"
         log.append(f"[{attempt}] ({look['by']}) {outfit} / {look['expression']} / {look['pose']} -> {reason}")
         if ok:
             return image, look, log
