@@ -9,8 +9,8 @@ on Lyra's own replies in those threads.
 Rules (see X_BOT_SPEC.md):
 - Never replies to the Doctor's own comments, or to comments the Doctor already
   answered manually from the account.
-- Same person on the same post: 1st-2nd comment -> normal reply,
-  3rd -> fixed "limit" reply, 4th and later -> ignored.
+- Same person on the same post: 1st-5th comment -> normal reply,
+  6th -> fixed "limit" reply, 7th and later -> ignored.
 - At most 30 replies per Japan-time day (spam replies included).
   Comments over the limit are skipped, not saved for later.
 - Commenters are stored only as irreversible hashes; records older than
@@ -28,6 +28,8 @@ import time
 
 import lyra_common as c
 import lyra_persona as p
+
+REPLIES_PER_PERSON = 5  # normal replies per person per post; the next one gets LIMIT_REPLY, then silence
 
 WEEKLY_PREFIX = "📡 This week's transmission is live"
 TIME_BUDGET = 300  # seconds; the job is killed at 10 minutes, so stop well before
@@ -194,10 +196,10 @@ def main():
             who = c.user_hash(m["author_id"])
             nth = state["reply_counts"].get(conv, {}).get(who, 0) + 1
 
-            if nth >= 4:
-                print(f"[{mid}] 4th+ comment from same person on this post, ignored")
+            if nth > REPLIES_PER_PERSON + 1:
+                print(f"[{mid}] comment #{nth} from same person on this post, ignored")
                 continue
-            if nth == 3:
+            if nth == REPLIES_PER_PERSON + 1:
                 text = p.LIMIT_REPLY
             else:
                 thread_parent = parent.get("text") if parent_id != conv else None
