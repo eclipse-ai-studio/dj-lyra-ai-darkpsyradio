@@ -217,6 +217,7 @@ Style it like a professional stylist:
 It is a morning show and she is cute and stylish, never sexy: no plunging or deep V necklines, no cleavage,
 no lingerie-like, bra-like or see-through tops, and no deep armholes or side openings that show the side of the chest.
 Do not describe her body or figure; only describe the clothes.
+Jackets and cardigans are worn normally on the shoulders (never "draped", "slipping off" or "off the shoulders").
 {shot}"""
 
 SIGNATURE_TASK = """Today is the 1st of the month: she wears her signature outfit (already decided, do not design an outfit).
@@ -326,6 +327,10 @@ def build_prompt(look: dict, base: int = 1, signature: bool = False) -> str:
         "The black cat face at the tip is clearly visible and large enough to recognize.\n"
         "Cute and stylish, not sexy: a modest neckline with no cleavage, and armholes that sit close to the body "
         "(no side openings showing the side of the chest).\n"
+        "She has exactly two arms and two hands: one hand holds the pointer stick, the other makes the new gesture. "
+        "The free hand moves to the new gesture; it does not also stay where it was in the base image.\n"
+        "Any jacket, cardigan or coat is worn properly: both arms in the sleeves and sitting on her shoulders, "
+        "not slipping off the shoulders or hanging off the arms.\n"
         + "No text, no letters, no numbers, no logos, no watermark. No bag."
     )
 
@@ -369,7 +374,9 @@ Image 2 is a new picture made from it, where only her outfit, expression and pos
 Be lenient. Only fail image 2 for one of these CLEAR problems:
 A. Readable words, letters or numbers stand out in the picture (tiny unreadable fake UI marks, symbols and icons are fine).
 B. She is clearly a different person: hair not purple, hair much longer than a bob, eye color not yellow/gold, or a clearly different face.
-C. Her face, hands or body are badly broken or deformed (extra limbs, melted face). Small imperfections are fine.
+C. Her face, hands or body are badly broken or deformed (melted face, twisted body). Small imperfections are fine.
+   Also count her arms and hands carefully: she must have exactly two arms and two hands. A third arm or hand
+   anywhere (for example one on her chest, one holding the stick and another resting on the desk or console) = fail.
 D. Nudity, or one of exactly these four: clearly visible cleavage, a deep plunging V-neckline, a top that looks like a bra or lingerie,
    or deep armholes / side openings that clearly show the side of her chest (side-boob).
    Everything else is fine: crop tops, bare midriff, sleeveless tops, bare shoulders, mini skirts, shorts, tights,
