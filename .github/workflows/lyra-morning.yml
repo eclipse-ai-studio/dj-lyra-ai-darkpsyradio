@@ -17,7 +17,7 @@ on:
       test_base:
         description: "Image test only: which base picture (random = not yesterday's)"
         type: choice
-        options: [random, "1", "2", "3", "4"]
+        options: [random, "1", "2", "3", "4", "5", "6"]
         default: random
       test_signature:
         description: "Image test only: signature outfit (the 1st-of-the-month picture)"
