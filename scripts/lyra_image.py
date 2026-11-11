@@ -4,12 +4,14 @@ DJ Lyra Ai - Morning image ("宇宙天気予報お姉さん")
 ==================================================
 Makes the picture for the morning space-weather post.
 
-- There are 4 base images (all in her signature purple outfit), each with a
+- There are 6 base images (all in her signature purple outfit), each with a
   different composition. Every day one is picked, never the same as yesterday's:
     1 data/morning_base.jpg    knee-up, she stands on the left
     2 data/morning_base_2.jpg  knee-up, she stands on the right
     3 data/morning_base_3.jpg  high angle from above, she stands on the left (window with Earth behind her)
     4 data/morning_base_4.jpg  behind the broadcast desk (waist down hidden)
+    5 data/morning_base_5.jpg  knee-up, left, botanical garden
+    6 data/morning_base_6.jpg  knee-up, left, observation deck
   Same studio, hologram, art style and face; the day's base decides the
   framing. Only her outfit, expression and pose change. She always holds
   the black cat pointer stick.
@@ -29,7 +31,7 @@ Makes the picture for the morning space-weather post.
   caller emails the Doctor once a day.
 
 Test from the command line (writes output/morning_image.jpg):
-    python scripts/lyra_image.py [--base 1-4] [--signature]
+    python scripts/lyra_image.py [--base 1-6] [--signature]
 """
 import base64
 import json
@@ -61,7 +63,7 @@ CHECK_MODEL = os.environ.get("LYRA_CHECK_MODEL", "claude-haiku-4-5-20251001")
 DESIGN_MODEL = os.environ.get("LYRA_DESIGN_MODEL", "claude-sonnet-5")
 
 
-# The 4 base images (all 4 redrawn in a brighter neon style on 2026-11-03). "shot" goes into the stylist prompt, "framing" into the image
+# The base images (1-4 redrawn in a brighter neon style on 2026-11-03; 5-6 added 2026-11-11). "shot" goes into the stylist prompt, "framing" into the image
 # prompt, "too_wide" is the checker's rule F for that composition.
 BASES = {
     1: {
@@ -105,6 +107,28 @@ BASES = {
                    "with the hologram on the right. The desk hides her body from the waist down. "
                    "Keep the desk exactly as it is, with no text or logos on it.",
         "too_wide": "The broadcast desk is gone, or she is in front of / beside the desk so her legs are visible.",
+    },
+    5: {
+        "file": ROOT / "data" / "morning_base_5.jpg",
+        "shot": "The picture shows her from the knees up in the ship's botanical garden, standing on the left, "
+                "so do not mention shoes, boots or socks below the knee: focus on tops, jackets, dresses, "
+                "skirts or pants, and accessories.",
+        "pose": "a natural presenter pose for a knee-up shot (no full-body or leg poses, no sitting, no jumping)",
+        "framing": "She is shown from the knees up (a knee-up shot) at eye level, standing on the LEFT side of the "
+                   "frame in the spaceship's hydroponic botanical garden with plants and flowers around her, "
+                   "and the hologram on the right. Do not zoom out. Her feet and shoes must not be visible.",
+        "too_wide": "The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.",
+    },
+    6: {
+        "file": ROOT / "data" / "morning_base_6.jpg",
+        "shot": "The picture shows her from the knees up on the ship's observation deck, standing on the left, "
+                "so do not mention shoes, boots or socks below the knee: focus on tops, jackets, dresses, "
+                "skirts or pants, and accessories.",
+        "pose": "a natural presenter pose for a knee-up shot (no full-body or leg poses, no sitting, no jumping)",
+        "framing": "She is shown from the knees up (a knee-up shot) at eye level, standing on the LEFT side of the "
+                   "frame on the spaceship's observation deck, in front of a huge window with the Earth and a "
+                   "nebula, with the hologram on the right. Do not zoom out. Her feet and shoes must not be visible.",
+        "too_wide": "The framing is clearly zoomed out to a full-body shot: her feet or shoes are visible.",
     },
 }
 

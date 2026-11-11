@@ -32,7 +32,7 @@ DJ Lyra Ai - Morning post (around 07:00 JST, "宇宙天気予報")
   post is out, later runs do nothing, so it never posts twice.
 
 - Picture (2026-10): each morning a "宇宙天気予報お姉さん" picture of Lyra is
-  made (scripts/lyra_image.py) and attached. It starts from one of 4 base
+  made (scripts/lyra_image.py) and attached. It starts from one of the base
   pictures (a different one from yesterday's); on the 1st of every month she
   wears her signature purple outfit. If no picture can be made (or its
   upload fails), that day's base picture is attached instead.
@@ -247,7 +247,7 @@ def image_test():
     st = c.load_state()
     recent = st.get("recent_image_looks", [])
     args = sys.argv[1:]
-    # --base N: test one base (1-4); otherwise a random one (not yesterday's)
+    # --base N: test one base (1-6); otherwise a random one (not yesterday's)
     try:
         base = int(args[args.index("--base") + 1])
         assert base in lyra_image.BASES
@@ -374,7 +374,7 @@ def main():
     record = {"kind": "morning", "date": date, "text": post, "context": "\n".join(context)}
 
     # --- picture: made before the "posting" flag (it takes a few minutes)
-    # one of the 4 base pictures, never the same as yesterday's; the 1st of the month = signature outfit
+    # one of the base pictures, never the same as yesterday's; the 1st of the month = signature outfit
     image, look, image_problem = None, None, None
     base = lyra_image.pick_base(c.load_state().get("last_image_base"))
     signature = lyra_image.is_signature_day(date)
