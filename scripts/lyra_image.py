@@ -162,9 +162,14 @@ def is_signature_day(date: str) -> bool:
     return date.endswith("-01")
 
 
+# Bases kept in BASES but not picked for now (base 3: the high angle makes her figure look bigger; on hold 2026-11-11).
+PAUSED_BASES = {3}
+
+
 def pick_base(last: int | None) -> int:
-    """A random base, never the same as yesterday's."""
-    choices = [n for n in BASES if n != last] or list(BASES)
+    """A random base, never the same as yesterday's (paused bases are skipped)."""
+    active = [n for n in BASES if n not in PAUSED_BASES] or list(BASES)
+    choices = [n for n in active if n != last] or active
     return random.choice(choices)
 
 
