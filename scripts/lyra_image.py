@@ -132,13 +132,15 @@ GENRES = [
     "business chic: a tailored blazer and skirt suit with a stylish twist",
     "bohemian: flowing layers, embroidery, fringe, natural colors",
     "DJ club wear: an oversized jacket or hoodie with bold graphics (no text), statement accessories",
-    "cozy winter: a chunky knit, a long scarf, warm layered textures",
     "gypsy dress: a flowing, colorful bohemian-gypsy dress with ruffled tiers, embroidery and coin jewelry",
     "tribal fusion belly-dance style: a modest high-neck top, layered flowing skirts, a coin hip belt, tribal jewelry",
     "rock casual: a band-style tee (no text), a leather or denim jacket, ripped details, silver rings",
     "kigurumi: a cute animal onesie-style outfit (cat, bear, rabbit...), with the hood pushed back so her purple hair shows",
     "gyaru: bright, bold Japanese gal fashion with a cute, cheerful vibe (not sexy), statement accessories",
     "yuru-fuwa: soft, fluffy, relaxed girly fashion in pastel colors, oversized knit, gentle layers",
+    "psychedelic: 60s-70s psychedelic patterns, swirling kaleidoscope or tie-dye prints in vivid colors, trippy accessories",
+    "dark fantasy: a mystical black-and-violet sorceress look, flowing layers, moon and star charms, an enchanted vibe",
+    "techno minimal: clean futuristic minimalism in white, black and gray, sharp lines, no decoration beyond one metallic accent",
     "steampunk: brown leather, brass gears, a corset-style vest over a blouse, goggles hung around the neck",
 ]
 RECENT_GENRES = 12
