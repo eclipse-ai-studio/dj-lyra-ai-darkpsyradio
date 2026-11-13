@@ -90,6 +90,12 @@
    "date": "2026-11-13",
    "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VTMZF\n#DarkpsyRadio #AIDJ #Psytrance https://t.co/MNahiCUDSp",
    "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
+  },
+  "2121363211454656557": {
+   "kind": "morning",
+   "date": "2026-11-14",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: M級 35% / X級 5%\n磁気嵐: なし\n月: 三日月🌒\n\n今日も一日、楽しい音が見つかりますように。",
+   "context": "今日の太陽フレア予報（NOAA）: M級（R1-R2） 35%、X級（R3以上） 5%\n今日の磁気嵐予報（NOAA）: 最大Kp 1.67 → G1未満（なし）\n今日の月: 三日月🌒"
   }
  },
  "recent_notices": [
@@ -122,7 +128,6 @@
   "受信ログを整理していたら、消えかけた古い信号の中に、とても小さなリズムが隠れていることに気づきました。大事に聴き直しています。"
  ],
  "recent_morning_lines": [
-  "今日も一日、応援しています。",
   "今日も一日、あなたのままでいてください。",
   "今日も一日、大切に過ごしてください。",
   "今日も一日、良い音を聴きながら過ごしてください。",
@@ -151,7 +156,8 @@
   "気をつけていってらっしゃい。",
   "がんばった分だけ、ちゃんと休みましょう。",
   "今日も一日、自分らしく。",
-  "今日も一日、おだやかに過ごせますように。"
+  "今日も一日、おだやかに過ごせますように。",
+  "今日も一日、楽しい音が見つかりますように。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -262,7 +268,7 @@
  "claims": {
   "morning": {
    "date": "2026-11-14",
-   "status": "posting",
+   "status": "done",
    "at": "2026-11-14T07:02:54+09:00",
    "post": {
     "kind": "morning",
@@ -387,7 +393,13 @@
    "expression": "Delighted giggle with wide sparkling eyes and rosy cheeks",
    "pose": "Pointer stick stretched toward Venus, free hand resting daintily near her bow, head tilted sweetly.",
    "genre": "sweet lolita: pastel colors, layered frills, bows, a bell-shaped skirt"
+  },
+  {
+   "outfit": "A cream satin blouse with full puffed sleeves under a fitted brown leather corset-style vest adorned with tiny brass gears and buckles, paired with a slim knee-length brown skirt. Brass-rimmed goggles hang around her neck, with a slender leather wrist cuff.",
+   "expression": "Bright, curious smile with a confident spark in her eyes",
+   "pose": "Pointer stick stretched toward Saturn, free hand resting lightly near her goggles strap, head tilted.",
+   "genre": "steampunk: brown leather, brass gears, a corset-style vest over a blouse, goggles hung around the neck"
   }
  ],
- "last_image_base": 6
+ "last_image_base": 2
 }
