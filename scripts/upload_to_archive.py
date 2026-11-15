@@ -22,6 +22,7 @@ Usage:
 import json
 import os
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -36,6 +37,21 @@ JST = timezone(timedelta(hours=9))  # dates and the identifier's time are Japan 
 IDENTIFIER_PREFIX = "dj-lyra-ai-darkpsyradio-mix"
 UPLOAD_FILENAME = "djlyraai_weekly_mix.mp3"
 
+# When Internet Archive is congested ("Please reduce your request rate",
+# "total_tasks_queued exceeds global_limit", 503 SlowDown), wait and try again.
+# Waits grow: 5, 10, 20, 40, 60, 60 minutes (about 3h15m in total), which still
+# fits inside the weekly-mix job's 350-minute limit after the tracks are made.
+RETRY_WAITS_MIN = [5, 10, 20, 40, 60, 60]
+CONGESTION_WORDS = (
+    "reduce your request rate",
+    "global_limit",
+    "slowdown",
+    "slow down",
+    "503",
+    "overloaded",
+    "total_tasks_queued",
+)
+
 
 def write_status(stage: str, ok: bool, detail: str):
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -44,6 +60,20 @@ def write_status(stage: str, ok: bool, detail: str):
         "ok": ok,
         "detail": detail,
     }, ensure_ascii=False, indent=2))
+
+
+def is_congestion(text: str) -> bool:
+    t = str(text).lower()
+    return any(w in t for w in CONGESTION_WORDS)
+
+
+def s3_overloaded(session, identifier: str, access_key: str) -> bool:
+    """Ask Internet Archive whether it is too busy right now. If the check itself fails, assume it's fine."""
+    try:
+        return bool(session.s3_is_overloaded(identifier=identifier, access_key=access_key))
+    except Exception as e:
+        print(f"[upload] busy check failed ({e}), trying anyway")
+        return False
 
 
 def main():
@@ -70,32 +100,68 @@ def main():
 
     print(f"[upload] identifier: {identifier}")
 
-    try:
-        result = ia.upload(
-            identifier,
-            files={UPLOAD_FILENAME: str(MIX_PATH)},
-            metadata={
-                "title": ia_title,
-                "mediatype": "audio",
-                "collection": "opensource_audio",
-                "creator": "DJ Lyra Ai",
-                "subject": "dark psytrance; psytrance; AI music; DJ Lyra Ai; Eclipse Ai Studio",
-                "description": (
-                    "Autonomous AI-generated dark psytrance mix by DJ Lyra Ai, "
-                    "Model-001 of Eclipse Ai Studio. Fully automated, no human DJ."
-                ),
-                "noindex": "true",
-            },
-            access_key=access_key,
-            secret_key=secret_key,
-            verbose=True,
-        )
-    except Exception as e:
-        write_status("archive_upload", False, f"Internet Archiveへのアップロードに失敗しました: {e}")
-        sys.exit(1)
+    session = ia.get_session(config={"s3": {"access": access_key, "secret": secret_key}})
+    metadata = {
+        "title": ia_title,
+        "mediatype": "audio",
+        "collection": "opensource_audio",
+        "creator": "DJ Lyra Ai",
+        "subject": "dark psytrance; psytrance; AI music; DJ Lyra Ai; Eclipse Ai Studio",
+        "description": (
+            "Autonomous AI-generated dark psytrance mix by DJ Lyra Ai, "
+            "Model-001 of Eclipse Ai Studio. Fully automated, no human DJ."
+        ),
+        "noindex": "true",
+    }
 
-    if not all(r.status_code == 200 for r in result):
+    # the same identifier is used for every try, so retries never leave extra empty items behind
+    attempts = len(RETRY_WAITS_MIN) + 1
+    last_error = ""
+    for attempt in range(1, attempts + 1):
+        if attempt > 1:
+            wait = RETRY_WAITS_MIN[attempt - 2]
+            print(f"[upload] Internet Archive is busy, waiting {wait} min before try {attempt}/{attempts}")
+            time.sleep(wait * 60)
+            if attempt < attempts and s3_overloaded(session, identifier, access_key):
+                last_error = "Internet Archive is still overloaded (busy check)"
+                print(f"[upload] still busy, skipping try {attempt}/{attempts}")
+                continue
+
+        print(f"[upload] try {attempt}/{attempts}")
+        try:
+            result = ia.upload(
+                identifier,
+                files={UPLOAD_FILENAME: str(MIX_PATH)},
+                metadata=metadata,
+                access_key=access_key,
+                secret_key=secret_key,
+                verbose=True,
+            )
+        except Exception as e:
+            last_error = str(e)
+            if is_congestion(last_error):
+                print(f"[upload] busy error on try {attempt}/{attempts}: {last_error}")
+                continue
+            # any other error (wrong key, missing file...) will not fix itself by waiting
+            write_status("archive_upload", False, f"Internet Archiveへのアップロードに失敗しました: {e}")
+            sys.exit(1)
+
+        bad = [r for r in result if r.status_code != 200]
+        if not bad:
+            print(f"[upload] uploaded on try {attempt}/{attempts}")
+            break
+        last_error = f"HTTP {bad[0].status_code}: {getattr(bad[0], 'text', '')[:300]}"
+        if bad[0].status_code == 503 or is_congestion(last_error):
+            print(f"[upload] busy response on try {attempt}/{attempts}: {last_error}")
+            continue
         write_status("archive_upload", False, "Internet Archiveへのアップロードが正常に完了しませんでした")
+        sys.exit(1)
+    else:
+        write_status(
+            "archive_upload",
+            False,
+            f"Internet Archiveへのアップロードに失敗しました({attempts}回試しましたが混雑が続きました): {last_error}",
+        )
         sys.exit(1)
 
     mix_url = f"https://archive.org/details/{identifier}"
