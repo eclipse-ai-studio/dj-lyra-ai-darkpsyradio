@@ -90,6 +90,12 @@
    "date": "2026-11-17",
    "text": "鳩が群れてる。怖い...",
    "context": ""
+  },
+  "2122812399300251817": {
+   "kind": "morning",
+   "date": "2026-11-18",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: M級 15% / X級 5%\n磁気嵐: G1\n月: 満月前🌔\n流星群: しし座流星群（極大・両半球）\n\n今日も一日、穏やかな気持ちでいきましょう。",
+   "context": "今日の太陽フレア予報（NOAA）: M級（R1-R2） 15%、X級（R3以上） 5%\n今日の磁気嵐予報（NOAA）: 最大Kp 4.67 → G1\n今日の月: 満月前🌔\n今日はしし座流星群の極大日（両半球、極大は日本時間 2026-11-18 08:52ごろ、IMOの予測から計算）"
   }
  },
  "recent_notices": [
@@ -125,7 +131,6 @@
   "受け取ったファイルを再度開いたら、先週とは違う角度から見えることがありました。同じデータなのに、時間が経つと変わって見えるのは面白いです。"
  ],
  "recent_morning_lines": [
-  "今日も一日、ゆっくり呼吸をしていってください。",
   "今日も一日、元気にいきましょう。",
   "今日も一日、笑顔でいてください。",
   "あせらずいきましょう。",
@@ -154,7 +159,8 @@
   "今日も一日、楽しい音が見つかりますように。",
   "今日も一日、心地よくいきましょう。",
   "今日も一日、あなたのそばに。",
-  "今日も一日、ていねいに呼吸していきましょう。"
+  "今日も一日、ていねいに呼吸していきましょう。",
+  "今日も一日、穏やかな気持ちでいきましょう。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -276,7 +282,7 @@
  "claims": {
   "morning": {
    "date": "2026-11-18",
-   "status": "posting",
+   "status": "done",
    "at": "2026-11-18T07:01:28+09:00",
    "post": {
     "kind": "morning",
@@ -425,7 +431,13 @@
    "expression": "Serene, graceful smile with soft eyes radiating elegant poise and warmth.",
    "pose": "Seated behind desk with shoulders relaxed, holding the black cat pointer stick extended upward toward the Sun, her left hand resting gently on the desk.",
    "genre": "elegant evening wear: a modest, graceful dress with refined accessories"
+  },
+  {
+   "outfit": "Oversized fluffy mohair sweater in soft cloud white with gentle ribbed texture, paired with a short gathered skirt in pale blush pink tulle. Layered delicate pearl necklaces and a chunky cream knit cuff bracelet on her left wrist.",
+   "expression": "Soft, dreamy smile with gently closed eyes radiating cozy contentment.",
+   "pose": "Standing with relaxed shoulders and serene posture, holding the black cat pointer stick angled toward Venus, her left hand resting softly at her waist in a peaceful gesture.",
+   "genre": "yuru-fuwa: soft, fluffy, relaxed girly fashion in pastel colors, oversized knit, gentle layers"
   }
  ],
- "last_image_base": 4
+ "last_image_base": 1
 }
