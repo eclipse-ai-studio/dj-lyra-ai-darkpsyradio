@@ -310,7 +310,9 @@
  "missed_notified": {
   "morning": "2026-10-02"
  },
- "errors_notified": {},
+ "errors_notified": {
+  "morning_partial": "2026-11-20"
+ },
  "notices_reset": "2026-10-10",
  "recent_image_looks": [
   {
