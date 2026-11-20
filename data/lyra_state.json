@@ -90,6 +90,12 @@
    "date": "2026-11-20",
    "text": "📡 This week's transmission is live. Have a beautiful weekend.\nThe archive is always open - come find us anytime. 🛸✨\nhttps://t.co/0KFE5VUkPd\n#DarkpsyRadio #AIDJ #Psytrance https://t.co/jPgjb1RzAZ",
    "context": "毎週土曜日に公開される、DJ Lyra AiのDarkpsyミックスの告知投稿。"
+  },
+  "2123900039504552253": {
+   "kind": "morning",
+   "date": "2026-11-21",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: M級 10% / X級 1%\n磁気嵐: なし\n月: 満月前🌔\n\n今日も一日、心に余裕をもっていきましょう。",
+   "context": "今日の太陽フレア予報（NOAA）: M級（R1-R2） 10%、X級（R3以上） 1%\n今日の磁気嵐予報（NOAA）: 最大Kp 2.67 → G1未満（なし）\n今日の月: 満月前🌔"
   }
  },
  "recent_notices": [
@@ -125,7 +131,6 @@
   "受信ログを見直していたら、先週届いた信号が、今日はちょっと違う周波数に聞こえました。"
  ],
  "recent_morning_lines": [
-  "あせらずいきましょう。",
   "いってらっしゃい。",
   "楽しい一日になりますように。",
   "今日も一日、お互いがんばりましょう。",
@@ -154,7 +159,8 @@
   "今日も一日、ていねいに呼吸していきましょう。",
   "今日も一日、穏やかな気持ちでいきましょう。",
   "今日も一日、ゆたかに過ごしてください。",
-  "今日も一日、あなたらしくいきましょう。"
+  "今日も一日、あなたらしくいきましょう。",
+  "今日も一日、心に余裕をもっていきましょう。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -283,7 +289,7 @@
  "claims": {
   "morning": {
    "date": "2026-11-21",
-   "status": "posting",
+   "status": "done",
    "at": "2026-11-21T07:03:21+09:00",
    "post": {
     "kind": "morning",
@@ -452,7 +458,13 @@
    "expression": "Confident smile with a sparkling, determined gleam",
    "pose": "Shoulders squared toward the hologram, pointer arm stretched toward Mars, free hand open near her waist.",
    "genre": "cyberpunk techwear: functional straps, buckles, panels, futuristic black with neon accents"
+  },
+  {
+   "outfit": "A black lace long-sleeve blouse with a high modest collar, under a deep wine-velvet corset-style vest with silver studded trim, paired with a slim black satin mini skirt edged in silver chain. Dangling silver spider-web earrings complete the gothic look.",
+   "expression": "Confident, dreamy smile with a soft mysterious gleam in her eyes",
+   "pose": "Shoulders turned toward the hologram, pointer arm stretched toward the Sun, free hand resting near her chin.",
+   "genre": "gothic: dark lace, corset-style vest over a blouse, velvet, silver details"
   }
  ],
- "last_image_base": 5
+ "last_image_base": 6
 }
