@@ -369,6 +369,11 @@ def main():
     context = []
     if flare and flare != "NA":
         context.append(f"今日の太陽フレア予報（NOAA）: M級（R1-R2） {flare[0]}%、X級（R3以上） {flare[1]}%")
+    elif flare == "NA":
+        context.append("今日の太陽フレア予報（NOAA）: データなし。NOAAが今朝の予報に数値を載せておらず取得できなかった"
+                       "（フレアが無い・少ないという意味ではない。今日の確率はわからない）")
+    else:
+        context.append("今日の太陽フレア予報（NOAA）: 取得できなかった（今日の確率はわからない）")
     if storm is not None:
         context.append(f"今日の磁気嵐予報（NOAA）: 最大Kp {storm[1]:.2f} → {'G' + str(storm[0]) if storm[0] else 'G1未満（なし）'}")
     if moon:

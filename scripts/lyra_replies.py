@@ -74,9 +74,24 @@ def clean_reply(text: str) -> str:
     return text
 
 
+JA_CHARS = re.compile(r"[\u3040-\u30ff\u4e00-\u9fff]")  # hiragana, katakana, kanji
+
+
+def is_english(comment: str) -> bool:
+    """A comment in Latin letters with no Japanese at all (English, Spanish...) is answered in its own language, never Japanese."""
+    body = re.sub(r"@\w+|https?://\S+", "", comment)
+    return bool(re.search(r"[A-Za-z]{2,}", body)) and not JA_CHARS.search(body)
+
+
 def write_reply(post: dict, thread_parent: str | None, comment: str) -> str:
     prompt = p.reply_user_prompt(post["text"], post.get("context", ""), thread_parent, comment)
+    english = is_english(comment)
+    if english:
+        # 2026-11-20: an English comment once got a Japanese reply, so say it outright
+        prompt += "\n\nこのコメントは日本語ではありません。返信はコメントと同じ言語（英語なら英語）だけで書いてください（日本語を混ぜない）。"
     text = clean_reply(c.claude_write(p.REPLY_SYSTEM, prompt, max_tokens=300))
+    if english and JA_CHARS.search(text or ""):
+        text = clean_reply(c.claude_write(p.REPLY_SYSTEM, prompt + "\n\n（Reply only in the comment's language. No Japanese.）", max_tokens=300))
     if text and c.x_len(text) <= c.X_LIMIT:
         return text
     # one retry asking for something shorter
