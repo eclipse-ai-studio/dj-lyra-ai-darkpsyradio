@@ -68,6 +68,10 @@ BANNED = ["わかりません", "分かりません", "わからない", "分か
           "SPACIA", "スパシア", "放送", "フレア", "磁気嵐", "流星", "日食", "月食", "天気", "雨", "晴れ", "寒", "暑",
           "博士"]  # 2026-10-24: posts never bring up 博士 (only replies, when asked)
 
+# NOAA left the flare numbers out ("NA"): say so plainly so nobody reads it as "no flares"
+FLARE_NA_LINE = "太陽フレア: データなし（データを取得できませんでした。NOAAの発表が遅れています。NOAAで直接確認してください。）"
+FLARE_NA_SHORT = "太陽フレア: データなし（NOAAの発表遅れ）"   # used when the long one leaves no room (e.g. eclipse days)
+
 MOON_EMOJI = {"新月": "🌑", "上弦の月": "🌓", "満月": "🌕", "下弦の月": "🌗"}
 # days between two of the four main phases (named after the phase that came before)
 MOON_BETWEEN = {"新月": "三日月🌒", "上弦の月": "満月前🌔", "満月": "満月後🌖", "下弦の月": "新月前🌘"}
@@ -90,8 +94,10 @@ def _column(cols: list[str], jst_date: str) -> int:
     return cols.index(want)
 
 
-def parse_flare_forecast(text: str, jst_date: str) -> tuple[str, str]:
-    """Return (R1-R2 %, R3 %) for the given Japan date, e.g. ('10', '1')."""
+def parse_flare_forecast(text: str, jst_date: str) -> tuple[str, str] | None:
+    """Return (R1-R2 %, R3 %) for the given Japan date, e.g. ('10', '1').
+    Returns None when NOAA left the numbers out ("NA" in the table, seen
+    2026-11-20): that is not an error, the post then says データなし."""
     lines = text.splitlines()
     header_idx, cols = _date_columns(lines, "Radio Blackout Forecast")
     idx = _column(cols, jst_date)
@@ -99,13 +105,16 @@ def parse_flare_forecast(text: str, jst_date: str) -> tuple[str, str]:
     def row(prefix: str) -> str:
         for l in lines[header_idx + 1: header_idx + 6]:
             if l.strip().startswith(prefix):
-                vals = re.findall(r"(\d{1,3})%", l)
+                vals = re.findall(r"(\d{1,3})%|\bNA\b", l)
                 if len(vals) != len(cols):
                     raise ValueError(f"unexpected row: {l}")
-                return vals[idx]
+                return vals[idx] or "NA"   # an "NA" cell matches with an empty number
         raise ValueError(f"row {prefix} not found")
 
-    return row("R1-R2"), row("R3")
+    m, x = row("R1-R2"), row("R3")
+    if "NA" in (m, x):
+        return None
+    return m, x
 
 
 def parse_storm_forecast(text: str, jst_date: str) -> tuple[int, float]:
@@ -214,7 +223,9 @@ def pick_line(fixed: list[str], recent: list[str], fresh: list[str]) -> tuple[st
 # ---------------------------------------------------------------- post
 def build_forecast(flare, storm, moon: str | None, meteor: dict | None) -> str:
     lines = []
-    if flare:
+    if flare == "NA":
+        lines.append(FLARE_NA_LINE)
+    elif flare:
         lines.append(f"太陽フレア: M級 {flare[0]}% / X級 {flare[1]}%")  # M級 = R1-R2, X級 = R3+
     if storm is not None:
         lines.append(f"磁気嵐: {'G' + str(storm[0]) if storm[0] else 'なし'}")
@@ -303,7 +314,7 @@ def main():
         problems.append(f"NOAAの予報を取得できませんでした（太陽フレア・磁気嵐なし）: {type(e).__name__}: {e}")
     if noaa:
         try:
-            flare = parse_flare_forecast(noaa, date)
+            flare = parse_flare_forecast(noaa, date) or "NA"   # "NA" = NOAA gave no numbers today (no email)
         except Exception as e:
             problems.append(f"太陽フレア予報を読み取れませんでした: {type(e).__name__}: {e}")
         try:
@@ -328,6 +339,8 @@ def main():
             problems.append(f"流星群のデータを読めませんでした: {type(e).__name__}: {e}")
 
     forecast = build_forecast(flare, storm, moon, meteor)
+    if flare == "NA" and not room_for_line(forecast, eclipse):
+        forecast = forecast.replace(FLARE_NA_LINE, FLARE_NA_SHORT)
 
     # --- encouragement: only if it fits after the forecast
     state_now = c.load_state()
@@ -354,7 +367,7 @@ def main():
         raise RuntimeError("nothing to post: " + " / ".join(problems))
 
     context = []
-    if flare:
+    if flare and flare != "NA":
         context.append(f"今日の太陽フレア予報（NOAA）: M級（R1-R2） {flare[0]}%、X級（R3以上） {flare[1]}%")
     if storm is not None:
         context.append(f"今日の磁気嵐予報（NOAA）: 最大Kp {storm[1]:.2f} → {'G' + str(storm[0]) if storm[0] else 'G1未満（なし）'}")
