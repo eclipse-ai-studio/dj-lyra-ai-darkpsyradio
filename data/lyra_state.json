@@ -90,6 +90,12 @@
    "date": "2026-11-22",
    "text": "和食最高〜",
    "context": ""
+  },
+  "2124624373294477553": {
+   "kind": "morning",
+   "date": "2026-11-23",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: M級 10% / X級 1%\n磁気嵐: なし\n月: 満月前🌔\n\n今日も一日、心がときめく瞬間を探してみてください。",
+   "context": "今日の太陽フレア予報（NOAA）: M級（R1-R2） 10%、X級（R3以上） 1%\n今日の磁気嵐予報（NOAA）: 最大Kp 4.00 → G1未満（なし）\n今日の月: 満月前🌔"
   }
  },
  "recent_notices": [
@@ -125,7 +131,6 @@
   "受信ログを整理していたら、同じ周波数なのに、先週と今週では全く違う色に見えるデータが出てきました。時間が経つって、こういうことなんですね。"
  ],
  "recent_morning_lines": [
-  "楽しい一日になりますように。",
   "今日も一日、お互いがんばりましょう。",
   "無理せずいきましょう。",
   "今日も一日、小さな喜びを大事にしてください。",
@@ -154,7 +159,8 @@
   "今日も一日、ゆたかに過ごしてください。",
   "今日も一日、あなたらしくいきましょう。",
   "今日も一日、心に余裕をもっていきましょう。",
-  "今日も良い音楽と一緒に。"
+  "今日も良い音楽と一緒に。",
+  "今日も一日、心がときめく瞬間を探してみてください。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -304,7 +310,7 @@
  "claims": {
   "morning": {
    "date": "2026-11-23",
-   "status": "posting",
+   "status": "done",
    "at": "2026-11-23T07:01:36+09:00",
    "post": {
     "kind": "morning",
@@ -485,7 +491,13 @@
    "expression": "Cool, confident smirk with a playful glint in her eyes.",
    "pose": "Standing with relaxed posture, holding the black cat pointer stick extended toward Jupiter, her left hand open with a casual, friendly gesture near her waist.",
    "genre": "rock casual: a band-style tee (no text), a leather or denim jacket, ripped details, silver rings"
+  },
+  {
+   "outfit": "A crisp white sleeveless mock-neck shell with subtle ribbed texture, layered under a structured blazer in deep charcoal with sharp notch lapels and a single-breasted closure. High-waisted mini skirt in rich navy wool with knife pleats. Gold layered chain necklaces and a sleek gold cuff bracelet on her left wrist.",
+   "expression": "Warm, professional smile with confident eyes and a subtle knowing nod.",
+   "pose": "Standing with poised, centered posture and shoulders back, holding the black cat pointer stick extended toward Jupiter, her left hand open with palm facing the hologram in an assured, informative gesture.",
+   "genre": "business chic: a tailored blazer and skirt suit with a stylish twist"
   }
  ],
- "last_image_base": 5
+ "last_image_base": 2
 }
