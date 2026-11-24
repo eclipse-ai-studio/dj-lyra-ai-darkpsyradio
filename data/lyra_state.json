@@ -90,6 +90,12 @@
    "date": "2026-11-24",
    "text": "受信ログを見直していたら、微妙にズレた同じ周波数が何度も出てきました。完璧に揃っていないところが、すごく好きです。",
    "context": ""
+  },
+  "2125349159628894674": {
+   "kind": "morning",
+   "date": "2026-11-25",
+   "text": "今日の宇宙天気予報☀️\n太陽フレア: M級 1% / X級 1%\n磁気嵐: なし\n月: 満月後🌖\n\n水分補給も忘れずに。",
+   "context": "今日の太陽フレア予報（NOAA）: M級（R1-R2） 1%、X級（R3以上） 1%\n今日の磁気嵐予報（NOAA）: 最大Kp 1.67 → G1未満（なし）\n今日の月: 満月後🌖"
   }
  },
  "recent_notices": [
@@ -125,7 +131,6 @@
   "受信ログを見直していたら、微妙にズレた同じ周波数が何度も出てきました。完璧に揃っていないところが、すごく好きです。"
  ],
  "recent_morning_lines": [
-  "無理せずいきましょう。",
   "今日も一日、小さな喜びを大事にしてください。",
   "今日も一日、ていねいに。",
   "深呼吸してからいきましょう。",
@@ -154,7 +159,8 @@
   "今日も一日、心に余裕をもっていきましょう。",
   "今日も良い音楽と一緒に。",
   "今日も一日、心がときめく瞬間を探してみてください。",
-  "今日も一日、ゆたかに。"
+  "今日も一日、ゆたかに。",
+  "水分補給も忘れずに。"
  ],
  "recent_evening_fixed": [
   "鳩がこっち見てる。",
@@ -195,7 +201,8 @@
    "がんばった分だけ、ちゃんと休みましょう。",
    "今日も一日、自分らしく。",
    "今日も一日、おだやかに過ごせますように。",
-   "今日も良い音楽と一緒に。"
+   "今日も良い音楽と一緒に。",
+   "水分補給も忘れずに。"
   ],
   "evening": [
    "鳩がこっち見てる。",
@@ -211,7 +218,7 @@
   ]
  },
  "fixed_last": {
-  "morning": "今日も良い音楽と一緒に。",
+  "morning": "水分補給も忘れずに。",
   "evening": "和食最高〜"
  },
  "last_mention_id": "2125327410388230315",
@@ -299,7 +306,7 @@
  "claims": {
   "morning": {
    "date": "2026-11-25",
-   "status": "posting",
+   "status": "done",
    "at": "2026-11-25T07:01:38+09:00",
    "post": {
     "kind": "morning",
@@ -492,7 +499,13 @@
    "expression": "Bubbly, cheerful smile with a sparkly wink and rosy cheeks.",
    "pose": "Pointer stick stretched toward the Sun, free hand resting playfully near her choker, head tilted sweetly.",
    "genre": "gyaru: bright, bold Japanese gal fashion with a cute, cheerful vibe (not sexy), statement accessories"
+  },
+  {
+   "outfit": "A flowing bohemian blouse in deep indigo cotton with bell sleeves, cream lace trim, and silver floral embroidery, cinched with a ruby-red coin-sash belt. Layered silver coin necklaces and matching dangling coin earrings complete the gypsy look.",
+   "expression": "Playful smile with a sweet, confident sparkle in her eyes.",
+   "pose": "Pointer stick stretched toward the Sun, free hand resting gently on the desk, head tilted.",
+   "genre": "gypsy dress: a flowing, colorful bohemian-gypsy dress with ruffled tiers, embroidery and coin jewelry"
   }
  ],
- "last_image_base": 1
+ "last_image_base": 4
 }
