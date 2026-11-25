@@ -40,7 +40,7 @@
 
   .wrap {
     position: relative;
-    z-index: 1;
+    /* no z-index here: it would cut the Lyra video off from the starfield it blends with */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -59,7 +59,7 @@
   /* Logo image (transparent background) */
   h1 .logo-img {
     display: block;
-    width: min(760px, 96vw);
+    width: min(520px, 78vw);
     height: auto;
     margin: 0 auto -0.4em;
   }
@@ -74,7 +74,7 @@
   }
 
   .tagline {
-    margin-top: 22px;
+    margin-top: 14px;
     max-width: 560px;
     font-size: 1.05rem;
     color: var(--text-dim);
@@ -195,6 +195,25 @@
   footer span {
     color: var(--cyan);
   }
+
+  /* Lyra (and her little robot) under the logo, 2026-11-25 */
+  .lyra-loop {
+    width: clamp(110px, 28vw, 150px);
+    aspect-ratio: 1;
+    margin: 4px auto -6px;
+    mix-blend-mode: lighten;  /* the video's black background lets the starfield through */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent),
+                        linear-gradient(to bottom, transparent, #000 3%, #000 97%, transparent);
+    -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent),
+                        linear-gradient(to bottom, transparent, #000 3%, #000 97%, transparent);
+            mask-composite: intersect;
+  }
+  .lyra-loop video {
+    width: 100%; height: 100%;
+    display: block;
+    object-fit: cover;
+  }
 </style>
 </head>
 <body>
@@ -203,6 +222,10 @@
 
 <div class="wrap">
   <h1><img class="logo-img" src="lyra_logo.webp" alt="DJ Lyra Ai" width="1672" height="280"><span class="sub">Darkpsy Radio</span></h1>
+  <div class="lyra-loop" aria-hidden="true">
+    <video src="lyra_loop.mp4" poster="lyra_loop_poster.webp" autoplay muted loop playsinline preload="auto"></video>
+  </div>
+
 
   <div class="tagline" id="tagline">
     <p>Autonomous AI dark psytrance radio, weekly mixes on air.</p>
@@ -226,6 +249,12 @@
 </footer>
 
 <script>
+  // less motion requested: show the still frame instead of the loop
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const v = document.querySelector('.lyra-loop video');
+    if (v) { v.removeAttribute('autoplay'); v.pause(); }
+  }
+
   // Starfield background
   const canvas = document.getElementById('starfield');
   const ctx = canvas.getContext('2d');
