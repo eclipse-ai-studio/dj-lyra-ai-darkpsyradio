@@ -197,10 +197,23 @@
   }
 
   /* Lyra (and her little robot) under the logo, 2026-11-25 */
-  .lyra-loop {
+  .lyra-stage {
+    position: relative;
     width: clamp(110px, 28vw, 150px);
-    aspect-ratio: 1;
     margin: 4px auto -6px;
+  }
+  /* a soft dark patch behind her, so the stars don't show through her dark clothes */
+  .lyra-stage::before {
+    content: "";
+    position: absolute;
+    inset: 4% -20% -10%;   /* not above her head: it would dim the title */
+    background: radial-gradient(closest-side, var(--bg-void) 70%, transparent);
+    pointer-events: none;
+  }
+  .lyra-loop {
+    position: relative;  /* drawn above the dark patch */
+    width: 100%;
+    aspect-ratio: 1;
     mix-blend-mode: lighten;  /* the video's black background lets the starfield through */
     -webkit-mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent),
                         linear-gradient(to bottom, transparent, #000 3%, #000 97%, transparent);
@@ -222,8 +235,10 @@
 
 <div class="wrap">
   <h1><img class="logo-img" src="lyra_logo.webp" alt="DJ Lyra Ai" width="1672" height="280"><span class="sub">Darkpsy Radio</span></h1>
-  <div class="lyra-loop" aria-hidden="true">
-    <video src="lyra_loop.mp4" poster="lyra_loop_poster.webp" autoplay muted loop playsinline preload="auto"></video>
+  <div class="lyra-stage">
+    <div class="lyra-loop" aria-hidden="true">
+      <video src="lyra_loop.mp4" poster="lyra_loop_poster.webp" autoplay muted loop playsinline preload="auto"></video>
+    </div>
   </div>
 
 
