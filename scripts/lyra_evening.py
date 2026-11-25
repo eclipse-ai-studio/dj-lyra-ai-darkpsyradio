@@ -29,6 +29,12 @@ MAX_ATTEMPTS = 4
 MAX_NOTICE_LEN = 70  # characters; target is ~30 (prompt says at most 50); a bit over is still accepted
 
 SIMILAR_LIMIT = 0.8  # 80% or more alike = treated as a copy
+# 2026-11-25 (notices kept saying 「受信ログを見直していたら…」):
+RECENT_THEMES_SKIP = 5   # a theme used in the last 5 notices is not picked again
+WORD_WINDOW = 7          # look at the last 7 notices...
+WORD_LIMIT = 2           # ...a watched word found in 2 or more of them is rested today
+OPENING_LEN = 8          # same first 8 characters as one of...
+OPENING_WINDOW = 10      # ...the last 10 notices = rejected
 
 # 2026-10-10 the character setting changed (weekend club DJ, not a daily broadcast).
 # Notices written before that are forgotten once, so Claude isn't shown the old tone as "recent posts".
@@ -52,12 +58,29 @@ BANNED = ["わかりません", "分かりません", "わからない", "分か
           "博士"]  # 2026-10-24: posts never bring up 博士 (only replies, when asked)
 
 
+def rested_words(recent: list[str]) -> list[str]:
+    window = recent[-WORD_WINDOW:]
+    return [w for w in p.WATCH_WORDS if sum(w in t for t in window) >= WORD_LIMIT]
+
+
+def pick_theme(state: dict, rested: list[str]) -> str:
+    used = state.get("recent_evening_themes", [])[-RECENT_THEMES_SKIP:]
+    themes = [t for t in p.EVENING_THEMES if t not in used]
+    if rested:
+        themes = [t for t in themes if t != "signals"]  # can't talk about signals without those words
+    return random.choice(themes or list(p.EVENING_THEMES))
+
+
+def remember_theme(state: dict, theme: str):
+    state["recent_evening_themes"] = (state.get("recent_evening_themes", []) + [theme])[-10:]
+
+
 def clean(text: str) -> str:
     text = text.strip().strip("「」\"'")
     return re.sub(r"\s*\n\s*", "", text)
 
 
-def is_usable(text: str, recent: list[str]) -> str | None:
+def is_usable(text: str, recent: list[str], rested: list[str] = ()) -> str | None:
     """Return None if OK, else the reason it's rejected."""
     if not text:
         return "empty"
@@ -72,6 +95,12 @@ def is_usable(text: str, recent: list[str]) -> str | None:
     for old in recent:
         if difflib.SequenceMatcher(None, text, old).ratio() >= SIMILAR_LIMIT:
             return f"too close to a recent post: {old}"
+    for w in rested:
+        if w in text:
+            return f"rested word: {w}"
+    for old in recent[-OPENING_WINDOW:]:
+        if text[:OPENING_LEN] == old[:OPENING_LEN]:
+            return f"same opening as a recent post: {old}"
     return None
 
 
@@ -81,20 +110,25 @@ def retry_hint(text: str, reason: str) -> str:
         return f"\n\n（さっきの案は{len(text)}字で長すぎました。30字前後、長くても50字以内で、短く書き直してください）"
     if reason.startswith("too close"):
         return "\n\n（さっきの案はお手本や最近のつぶやきに似すぎていました。別の内容で書いてください）"
+    if reason.startswith("rested word"):
+        return f"\n\n（さっきの案は今日使わない言葉「{reason.split(': ', 1)[1]}」が入っていました。その言葉なしで書き直してください）"
+    if reason.startswith("same opening"):
+        return "\n\n（さっきの案は最近のつぶやきと書き出しが同じでした。違う書き出しで書いてください）"
     return f"\n\n（さっきの案は使えませんでした: {reason}。ルールを守って書き直してください）"
 
 
-def write_notice(recent: list[str]) -> str:
-    prompt = p.evening_user_prompt(recent)
+def write_notice(recent: list[str], theme: str, rested: list[str]) -> str:
+    print(f"[claude] theme: {theme}, rested words: {rested or 'none'}")
+    prompt = p.evening_user_prompt(recent, theme, rested)
     last_reason = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         text = clean(c.claude_write(p.EVENING_SYSTEM, prompt, max_tokens=150))
-        reason = is_usable(text, recent)
+        reason = is_usable(text, recent, rested)
         print(f"[claude] attempt {attempt}: {text!r} -> {reason or 'OK'}")
         if reason is None:
             return text
         last_reason = reason
-        prompt = p.evening_user_prompt(recent) + retry_hint(text, reason)
+        prompt = p.evening_user_prompt(recent, theme, rested) + retry_hint(text, reason)
     raise ValueError(f"Claude's notices did not pass the checks ({last_reason})")
 
 
@@ -118,6 +152,8 @@ def main():
     texts = c.load_texts()
     state = c.load_state()
     recent = fresh_notices(state)
+    rested = rested_words(recent)
+    theme = pick_theme(state, rested)
     # fixed lines: every one is used once (random order) before any repeats, then a new round
     all_fixed = texts["evening_food"] + texts["evening_animal"]
     fixed_pool = c.fixed_pool(state, "evening", all_fixed)
@@ -127,7 +163,7 @@ def main():
         post, kind = random.choice(fixed_pool), "fixed"
     else:
         try:
-            post, kind = write_notice(recent), "notice"
+            post, kind = write_notice(recent, theme, rested), "notice"
         except ValueError as e:
             # Claude answered, but every try broke a rule (too long etc.): no email, just use a fixed line
             print(f"[claude] {e}")
@@ -152,6 +188,7 @@ def main():
         # the next run checks X for this exact text before doing anything.
         if kind == "notice":
             remember_notice(state, post)  # keep it out of future notices either way
+            remember_theme(state, theme)
         else:
             state.setdefault("recent_evening_fixed", []).append(post)
             c.remember_fixed(state, "evening", post, all_fixed)
@@ -167,6 +204,7 @@ def main():
 
     if kind == "notice":
         remember_notice(state, post)
+        remember_theme(state, theme)
     else:
         state.setdefault("recent_evening_fixed", []).append(post)
         c.remember_fixed(state, "evening", post, all_fixed)

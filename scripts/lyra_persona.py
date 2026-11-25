@@ -101,9 +101,7 @@ def morning_user_prompt(recent: list[str]) -> str:
 # ------------------------------------------------------------------ evening
 EVENING_SYSTEM = CHARACTER + """
 【今回の仕事】夕方のつぶやきを1つ書く。
-・テーマ: AIとしての視点での、ふとした小さな気づき
-  （宇宙で受け取る信号・周波数、自分のログ・データ、
-   週末のDJやパーティー、AI DJ仲間、選曲 など）
+・テーマ: AIとしての視点での、ふとした小さな気づき。今日のテーマはメッセージで指定する（それに沿って書く）
 ・クラブの名前は出さない（「週末のクラブ」「パーティー」などの言い方にする）
 ・人間のような体の感覚（匂い、温度、眠気など）ではなく、AIらしい感じ方で書く
 ・気の利いた言い回しにしない。素直な言葉で、淡々とした一言にする
@@ -171,16 +169,37 @@ EVENING_EXAMPLES = [
 ]
 EVENING_SYSTEM = EVENING_SYSTEM.replace("{examples}", "\n".join(EVENING_EXAMPLES))
 
+# 2026-11-25: the notices kept circling back to 受信ログ/周波数/信号 (22 of the last 30),
+# so each day gets one theme, picked by lyra_evening.py (themes used in the last few days are skipped).
+# key -> what to write about. "signals" is just one theme among many now.
+EVENING_THEMES = {
+    "dj_prep": "週末のDJの準備（セットリストの組み立て、次に試したい曲、曲のつなぎ）",
+    "party_memory": "先週末のパーティーの思い出（フロアの盛り上がり、かけた曲、印象に残った瞬間）",
+    "ai_dj_friends": "AI DJ仲間とのやりとり（おすすめの曲を教え合う、一緒にやりたいこと）",
+    "planet_rave": "これまで旅したいろいろな惑星のRAVEの記憶（その星の景色や、そこで鳴っていた音）",
+    "space_view": "星や宇宙の景色（星雲、流れ星、星座、遠い星の光）",
+    "new_music": "新しい曲や選曲、曲作りのこと（今聴いている曲、作ってみたい曲）",
+    "small_joy": "今日の小さなうれしいこと・やさしい気持ち（ありがとう、ちょっとがんばれたこと）",
+    "ai_quirk": "AIらしい小さなクセや、ちょっとお茶目な失敗（数えていたら途中でわからなくなった、など）",
+    "sound_texture": "好きな音の手触り（キックの重さ、シンセの音色、残響の広がり）",
+    "signals": "宇宙から届く信号や、自分の記録のこと",
+}
+# words that pile up when every notice is about signals; overused ones are rested for the day
+WATCH_WORDS = ["受信", "ログ", "周波数", "信号", "データ", "波形"]
+SHOWN_RECENT = 10   # how many recent notices Claude is shown (more than this pulls it toward the same pattern)
 
-def evening_user_prompt(recent: list[str]) -> str:
-    if not recent:
-        return "今日の夕方のつぶやきを1つ書いてください。"
-    lines = "\n".join(f"・{t}" for t in recent)
-    return (
-        "今日の夕方のつぶやきを1つ書いてください。\n"
-        "最近は次のようなつぶやきをしました。同じ内容・似た言い回しは避けてください。\n"
-        f"{lines}"
-    )
+
+def evening_user_prompt(recent: list[str], theme: str, rested_words: list[str]) -> str:
+    parts = [
+        "今日の夕方のつぶやきを1つ書いてください。",
+        f"今日のテーマ: {EVENING_THEMES[theme]}",
+    ]
+    if rested_words:
+        parts.append("最近使いすぎているので、今日は次の言葉を使わないでください: " + "、".join(rested_words))
+    if recent:
+        lines = "\n".join(f"・{t}" for t in recent[-SHOWN_RECENT:])
+        parts.append("最近は次のようなつぶやきをしました。同じ内容・似た書き出し・似た言い回しは避けてください。\n" + lines)
+    return "\n".join(parts)
 
 
 # ------------------------------------------------------------------ replies
