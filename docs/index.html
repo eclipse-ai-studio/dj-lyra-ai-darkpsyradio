@@ -89,46 +89,8 @@
     color: var(--pink);
   }
 
-  #onair {
-    margin-top: 30px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.85rem;
-    letter-spacing: 3px;
-    padding: 8px 18px;
-    border: 1px solid rgba(244, 224, 77, 0.3);
-    border-radius: 999px;
-    background: rgba(244, 224, 77, 0.05);
-  }
-
-  #onair .dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--yellow);
-    box-shadow: 0 0 10px var(--yellow), 0 0 20px var(--yellow);
-    animation: pulse 1.8s infinite ease-in-out;
-  }
-
-  #onair.off .dot {
-    background: #444;
-    box-shadow: none;
-    animation: none;
-  }
-
-  #onair.off {
-    border-color: rgba(255,255,255,0.1);
-    color: #666;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.8); }
-  }
-
   nav {
-    margin-top: 46px;
+    margin-top: 36px;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -196,6 +158,13 @@
     color: var(--cyan);
   }
 
+  footer .credit {
+    margin-top: 8px;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    color: #3a3150;
+  }
+
   /* Lyra (and her little robot) under the logo, 2026-11-25 */
   .lyra-stage {
     position: relative;
@@ -247,11 +216,6 @@
     <p>SATURDAY 03:00 (JST) — broadcasting to the edge of the universe 🛸</p>
   </div>
 
-  <div id="onair">
-    <div class="dot"></div>
-    <span>ON AIR</span>
-  </div>
-
   <nav>
     <span class="disabled">🔊 CLUB SPACIA<small>Entrance under construction</small></span>
     <a href="radio.html">🎧 Radio<small>Darkpsy Mixes</small></a>
@@ -261,6 +225,7 @@
 
 <footer>
   Signals received: <span id="signal-count">···</span>
+  <div class="credit">© 2026 Eclipse Ai Studio</div>
 </footer>
 
 <script>
@@ -302,13 +267,11 @@
   }
   requestAnimationFrame(draw);
 
-  // ON AIR status + death mode message from heartbeat.json
+  // death mode: swap the tagline for the farewell message
   fetch('heartbeat.json')
     .then(r => r.json())
     .then(data => {
-      const onairEl = document.getElementById('onair');
       if (data.death_mode) {
-        onairEl.classList.add('off');
 
         const tagline = document.getElementById('tagline');
         tagline.classList.add('death');
