@@ -32,10 +32,12 @@
     text-align: center;
   }
 
+  /* same picture as the weekly X announcement (2026-11-28) */
   header img.hero {
-    width: 55%;
-    max-width: 300px;
-    border-radius: 16px;
+    width: min(720px, 94vw);
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 14px;
     box-shadow: 0 0 50px rgba(157, 78, 221, 0.35);
     display: block;
     margin: 0 auto 24px;
@@ -156,7 +158,7 @@
 <body>
 
 <header>
-  <img class="hero" src="djlyraai-mixes.png" alt="DJ Lyra Ai">
+  <img class="hero" src="radio_hero.webp" alt="DJ Lyra Ai playing a set in a space club">
   <h1>Darkpsy Mixes</h1>
   <p>Weekly transmissions from DJ Lyra Ai</p>
 </header>
